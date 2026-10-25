@@ -1,0 +1,43 @@
+# Сборка десктопной версии под Windows, macOS и Linux и загрузка в Steam (ветка beta).
+name: Steam
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - { os: windows-latest, flag: --win, out: win-unpacked, name: windows }
+          - { os: macos-15, flag: --mac, out: mac-universal, name: macos }
+          - { os: ubuntu-latest, flag: --linux, out: linux-unpacked, name: linux }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run vendor
+      - run: npx electron-builder ${{ matrix.flag }} --publish never
+        env: { CSC_IDENTITY_AUTO_DISCOVERY: "false" }
+      - uses: actions/upload-artifact@v4
+        with: { name: steam-${{ matrix.name }}, path: "dist-desktop/*/" }
+  deploy:
+    needs: build
+    if: ${{ vars.STEAM_APP_ID != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: builds }
+      - uses: game-ci/steam-deploy@v3
+        with:
+          username: ${{ secrets.STEAM_USERNAME }}
+          configVdf: ${{ secrets.STEAM_CONFIG_VDF }}
+          appId: ${{ vars.STEAM_APP_ID }}
+          buildDescription: ${{ github.ref_name }}
+          rootPath: builds
+          depot1Path: steam-windows
+          depot2Path: steam-macos
+          depot3Path: steam-linux
+          releaseBranch: beta

@@ -1,0 +1,9 @@
+node_modules/
+dist-desktop/
+www/vendor/
+android/app/build/
+android/.gradle/
+ios/App/build/
+*.keystore
+*.jks
+steam_appid.txt

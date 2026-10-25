@@ -1,0 +1,676 @@
+<title>Лотерея рождения</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="vendor/fonts.css">
+<style>
+/* Layout: one narrow column, like a birth record that grows stage by stage; the night field of births sits behind it.
+   The HUD stays on screen through a life so its bars and age can animate; the stage below it swaps cards and events. */
+:root {
+  --ink: #0f1424;        /* night behind the births */
+  --panel: #171e33;
+  --raised: #1d2540;
+  --line: #2a3352;
+  --fg: #e9e6f2;
+  --muted: #9aa0bb;
+  --life: #f2b45a;       /* the one birth that is you */
+  --good: #7fd1a6;
+  --bad: #ef8a8a;
+  --mood: 242, 180, 90;  /* glow colour, shifts with happiness */
+  --mood-a: .18;
+  --display: "Unbounded", "Segoe UI", system-ui, sans-serif;
+  --body: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #2a3352; border-radius: 99px; }
+html, body { height: 100%; }
+body {
+  background: var(--ink); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  overflow-x: hidden;
+}
+#mood { position: fixed; inset: 0; pointer-events: none; z-index: 0; transition: background 1.2s ease;
+  background: radial-gradient(80% 60% at 50% 0%, rgba(var(--mood), var(--mood-a)), transparent 70%); }
+#field { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: .55; transition: opacity 1.5s ease; }
+body.dim #field { opacity: .12; }
+main { position: relative; z-index: 1; max-width: 580px; margin: 0 auto; padding-block: 28px 80px; display: grid; gap: 18px; }
+h1, h2 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -.01em; }
+h1 { font-size: clamp(28px, 7.5vw, 44px); font-weight: 800; line-height: 1.08; }
+h1 em { font-style: normal; color: var(--life); }
+h2 { font-size: 19px; font-weight: 600; line-height: 1.3; }
+p { margin: 0; }
+ul { margin: 0; padding: 0; }
+.muted { color: var(--muted); }
+.eyebrow { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+.stack { display: grid; gap: 12px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; }
+.between { justify-content: space-between; align-items: flex-end; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
+button {
+  font: inherit; font-weight: 700; color: var(--ink); background: var(--life); border: 0; border-radius: 10px;
+  padding: 12px 18px; cursor: pointer; transition: transform .12s ease, filter .12s ease, box-shadow .2s ease;
+}
+button:hover { filter: brightness(1.08); box-shadow: 0 6px 24px -8px rgba(242,180,90,.6); }
+button:active { transform: translateY(1px) scale(.98); }
+button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+button.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); box-shadow: none; }
+button.big { font-size: 18px; padding: 16px 26px; }
+.pulse { animation: pulse 2.2s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(242,180,90,.45); } 50% { box-shadow: 0 0 0 12px rgba(242,180,90,0); } }
+
+/* ----- options / cards ----- */
+.option {
+  position: relative; overflow: hidden; display: grid; gap: 6px; width: 100%; text-align: left; background: var(--raised); color: var(--fg);
+  border: 1px solid var(--line); font-weight: 500; padding: 14px 16px; box-shadow: none;
+  transition: transform .2s ease, opacity .3s ease, border-color .2s ease, background .3s ease;
+}
+.option:hover { border-color: var(--life); filter: none; transform: translateY(-2px); box-shadow: none; }
+.option b { font-weight: 700; }
+.option.dimmed { opacity: .25; transform: scale(.97); pointer-events: none; animation: none; }
+.option.chosen, .option.win { animation: none; }
+.option.chosen { border-color: var(--life); pointer-events: none; transform: none; }
+.option.win { border-color: var(--good); background: #1b3330; }
+.option.lose { border-color: var(--bad); background: #35202a; animation: shake .45s ease; }
+@keyframes shake { 20% { transform: translateX(-7px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(2px); } }
+.enter { animation: enter .45s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i, 0) * 70ms); }
+@keyframes enter { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+.focus-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.focus-grid .option { text-align: center; justify-items: center; }
+.focus-grid .ico { font-size: 26px; line-height: 1; }
+
+/* chance roll inside a chosen option */
+.roll { position: relative; height: 10px; border-radius: 99px; background: #3a2530; overflow: visible; margin-top: 4px; }
+.roll .zone { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: #2f5a47; }
+.roll .needle { position: absolute; top: -5px; width: 3px; height: 20px; border-radius: 2px; background: var(--fg); left: 0; box-shadow: 0 0 10px rgba(233,230,242,.8); }
+.stamp { font-family: var(--display); font-weight: 800; font-size: 15px; letter-spacing: .04em; animation: stamp .35s cubic-bezier(.2,1.6,.4,1) both; }
+.stamp.ok { color: var(--good); } .stamp.no { color: var(--bad); }
+@keyframes stamp { from { opacity: 0; transform: scale(1.8); } to { opacity: 1; transform: none; } }
+.result-text { animation: enter .4s ease both; animation-delay: .15s; }
+.hint { font-size: 12px; color: var(--muted); text-align: center; animation: enter .4s ease both; animation-delay: .6s; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; font-family: var(--mono); font-size: 12px; }
+.chip { padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+.chip.up { color: var(--good); border-color: #2f5a47; }
+.chip.down { color: var(--bad); border-color: #5e3239; }
+.chip.odds { color: var(--life); border-color: #5a4730; }
+
+/* ----- HUD ----- */
+.hud { position: relative; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.stat { display: grid; gap: 2px; }
+.stat .v { font-family: var(--mono); font-size: 18px; font-variant-numeric: tabular-nums; }
+.bars { display: grid; gap: 8px; }
+.bar { position: relative; display: grid; grid-template-columns: 82px 1fr 34px; gap: 10px; align-items: center; font-size: 14px; }
+.bar .track { height: 8px; background: #252e4b; border-radius: 99px; overflow: hidden; }
+.bar .fill { height: 100%; background: var(--fg); border-radius: 99px; transition: width .7s cubic-bezier(.2,.8,.2,1), background .4s ease; }
+.bar.flash-up .fill { background: var(--good); }
+.bar.flash-down .fill { background: var(--bad); }
+.bar .n { font-family: var(--mono); font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
+.bar.low .n { color: var(--bad); }
+.delta { position: absolute; right: 44px; top: -6px; font-family: var(--mono); font-weight: 600; font-size: 14px; pointer-events: none; animation: float 1.3s ease-out forwards; }
+.delta.up { color: var(--good); } .delta.down { color: var(--bad); }
+@keyframes float { 0% { opacity: 0; transform: translate(0, 6px) scale(.8); } 15% { opacity: 1; transform: translate(0, 0) scale(1.15); } 100% { opacity: 0; transform: translate(0, -26px) scale(1); } }
+.age { font-family: var(--display); font-size: 48px; font-weight: 800; line-height: 1; color: var(--life); font-variant-numeric: tabular-nums; }
+.age.tick { animation: tick .25s ease; }
+@keyframes tick { 50% { transform: scale(1.06); } }
+.who { font-family: var(--display); font-size: 17px; font-weight: 600; }
+.facts { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); }
+.timeline { position: relative; height: 22px; }
+.timeline .rail { position: absolute; left: 0; right: 0; top: 9px; height: 4px; border-radius: 99px; background: #252e4b; }
+.timeline .lived { position: absolute; left: 0; top: 9px; height: 4px; border-radius: 99px; background: linear-gradient(90deg, #7d6a4a, var(--life)); transition: width .9s cubic-bezier(.2,.8,.2,1); }
+.timeline .me { position: absolute; top: 4px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--life); box-shadow: 0 0 14px rgba(242,180,90,.8); transition: left .9s cubic-bezier(.2,.8,.2,1); }
+.timeline .avg { position: absolute; top: 2px; width: 2px; height: 18px; background: var(--muted); opacity: .7; }
+.timeline .avg span { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; }
+
+.log { display: grid; gap: 8px; font-size: 15px; }
+.log li { list-style: none; display: grid; grid-template-columns: 26px 1fr; gap: 8px; align-items: start; }
+.log li .ic { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; background: #252e4b; color: var(--muted); }
+.log li.up .ic { background: #1f3b31; color: var(--good); }
+.log li.down .ic { background: #3a2229; color: var(--bad); }
+.log li.star .ic { background: var(--life); color: var(--ink); }
+.log li.pop { animation: pop .45s cubic-bezier(.2,1.4,.4,1) both; animation-delay: calc(var(--i, 0) * 380ms); }
+@keyframes pop { from { opacity: 0; transform: translateX(-12px) scale(.96); } to { opacity: 1; transform: none; } }
+.log .y { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-right: 6px; }
+.list { display: grid; gap: 6px; font-size: 14px; }
+.list li { list-style: none; display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--line); padding-bottom: 6px; }
+.list li span:last-child { font-family: var(--mono); color: var(--muted); text-align: right; }
+.score { font-family: var(--display); font-size: 44px; font-weight: 800; color: var(--life); font-variant-numeric: tabular-nums; }
+.note { font-size: 13px; color: var(--muted); }
+.dream.done { color: var(--good); }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge { font-size: 13px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--line); color: var(--muted); }
+.badge.on { color: var(--fg); border-color: var(--life); }
+.badge.new { background: var(--life); color: var(--ink); border-color: var(--life); animation: stamp .4s cubic-bezier(.2,1.6,.4,1) both; animation-delay: calc(var(--i, 0) * 150ms); }
+.fade { animation: in .5s ease both; animation-delay: calc(var(--d, 0) * 120ms); }
+@keyframes in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* twins race */
+.race { display: grid; gap: 10px; }
+.race .lane { display: grid; gap: 4px; font-size: 13px; }
+.race .lane .top { display: flex; justify-content: space-between; gap: 10px; }
+.race .lane .top span:last-child { font-family: var(--mono); color: var(--muted); }
+.race .track { height: 8px; border-radius: 99px; background: #252e4b; overflow: hidden; }
+.race .run { height: 100%; width: 0; border-radius: 99px; background: var(--muted); transition: width 2.2s cubic-bezier(.3,.7,.2,1); }
+.race .lane.me .run { background: var(--life); }
+.race .lane.me .top span:first-child { color: var(--life); font-weight: 700; }
+
+/* overlay: roulette, death */
+#overlay { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 24px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px));
+  background: rgba(15,20,36,.985); opacity: 0; pointer-events: none; transition: opacity .5s ease; text-align: center; }
+#overlay.show { opacity: 1; pointer-events: auto; }
+.roulette { display: grid; gap: 14px; justify-items: center; }
+.roulette .slot { font-family: var(--display); font-weight: 800; font-size: clamp(28px, 8vw, 54px); line-height: 1.1; min-height: 1.2em; }
+.roulette .slot.final { color: var(--life); animation: stamp .5s cubic-bezier(.2,1.6,.4,1) both; }
+.roulette .odds { font-family: var(--mono); color: var(--muted); }
+.roulette .counter { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+.farewell { display: grid; gap: 12px; justify-items: center; max-width: 440px; }
+.farewell .candle { width: 10px; height: 10px; border-radius: 50%; background: var(--life); box-shadow: 0 0 30px 8px rgba(242,180,90,.6); animation: candle 2.6s ease forwards; }
+@keyframes candle { 0% { opacity: 1; } 70% { opacity: .9; } 100% { opacity: .15; box-shadow: 0 0 6px 1px rgba(242,180,90,.2); } }
+.farewell > * { animation: in 1s ease both; }
+.farewell > *:nth-child(2) { animation-delay: .4s; } .farewell > *:nth-child(3) { animation-delay: .9s; } .farewell > *:nth-child(4) { animation-delay: 1.4s; }
+
+/* toasts */
+#toasts { position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 12px); display: grid; gap: 8px; width: min(92vw, 420px); pointer-events: none; }
+.toast { background: var(--life); color: var(--ink); border-radius: 12px; padding: 10px 14px; font-weight: 700; box-shadow: 0 10px 30px -10px rgba(0,0,0,.6); animation: toast 3.2s ease forwards; }
+.toast small { display: block; font-weight: 500; opacity: .8; }
+@keyframes toast { 0% { opacity: 0; transform: translateY(-16px) scale(.95); } 10%, 85% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-10px); } }
+
+#sound { position: fixed; z-index: 25; top: calc(env(safe-area-inset-top, 0px) + 10px); right: calc(max(16px, env(safe-area-inset-right, 0px))); padding: 8px 12px; font-size: 13px; }
+
+@media (min-width: 1100px) and (min-height: 760px) { main { zoom: 1.2; } }
+@media (min-width: 1600px) and (min-height: 1000px) { main { zoom: 1.4; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; transition-duration: .01ms !important; }
+}
+</style>
+
+<div id="mood"></div>
+<canvas id="field" aria-hidden="true"></canvas>
+<button id="sound" class="ghost" aria-pressed="true">Звук: вкл</button>
+<main id="app" aria-live="polite"></main>
+<div id="overlay" aria-live="assertive"></div>
+<div id="toasts" aria-live="polite"></div>
+
+<script src="vendor/confetti.js"></script>
+<script src="vendor/platform.js"></script>
+<script src="data/countries.js"></script>
+<script src="data/names.js"></script>
+<script src="data/content.js"></script>
+<script src="engine.js"></script>
+<script>
+// ---------- Утилиты ----------
+const app = document.getElementById("app"), overlay = document.getElementById("overlay");
+const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fmt = n => n.toLocaleString("ru-RU");
+function plural(n, one, few, many) { const a = n % 10, b = n % 100; return n + " " + (a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many); }
+const years = n => plural(n, "год", "года", "лет");
+const resName = Object.fromEntries(RES);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+function save(key, val) { const s = JSON.stringify(val); try { localStorage.setItem(key, s); } catch (e) {} if (window.Platform) Platform.mirror(key, s); }
+function load(key, def) { try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch (e) { return def; } }
+const today = () => new Date().toISOString().slice(0, 10);
+
+// паузы, которые можно пропустить касанием
+let skipping = false;
+document.addEventListener("pointerdown", () => { skipping = true; });
+function sleep(ms) {
+  if (REDUCE) ms = Math.min(ms, 60);
+  return new Promise(res => { const t0 = performance.now(); (function check() { if (skipping || performance.now() - t0 >= ms) res(); else requestAnimationFrame(check); })(); });
+}
+function tween(from, to, ms, onStep, ease = t => 1 - Math.pow(1 - t, 3)) {
+  if (REDUCE) { onStep(to); return Promise.resolve(); }
+  return new Promise(res => { const t0 = performance.now(); (function f(now) { const t = Math.min(1, (now - t0) / ms); onStep(from + (to - from) * ease(t)); if (t < 1) requestAnimationFrame(f); else res(); })(t0); });
+}
+function burst(opts = {}) {
+  if (REDUCE || typeof confetti !== "function") return;
+  try { confetti({ particleCount: 90, spread: 70, startVelocity: 38, origin: { y: .35 }, colors: ["#f2b45a", "#e9e6f2", "#7fd1a6", "#f6d29a"], disableForReducedMotion: true, ...opts }); } catch (e) {}
+}
+function buzz(kind) { if (window.Platform) Platform.haptic(kind); else try { navigator.vibrate && navigator.vibrate(60); } catch (e) {} }
+function toast(title, sub) {
+  const box = document.getElementById("toasts"), el = document.createElement("div");
+  el.className = "toast"; el.innerHTML = `${esc(title)}${sub ? `<small>${esc(sub)}</small>` : ""}`;
+  box.appendChild(el); setTimeout(() => el.remove(), 3300);
+}
+function setMood(p) {
+  const j = p ? p.r.j : 55;
+  const warm = [242, 180, 90], cold = [110, 130, 190], t = clamp((j - 20) / 60, 0, 1);
+  const c = warm.map((w, i) => Math.round(cold[i] + (w - cold[i]) * t));
+  document.documentElement.style.setProperty("--mood", c.join(", "));
+  document.documentElement.style.setProperty("--mood-a", (.1 + .14 * t).toFixed(2));
+}
+
+// ---------- Звук: короткие синтезированные сигналы ----------
+const Sound = {
+  on: load("lottery.sound", true), ctx: null,
+  ensure() { if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (this.ctx && this.ctx.state === "suspended") this.ctx.resume(); return this.ctx; },
+  tone(freq, dur = .12, type = "sine", vol = .08, delay = 0, slide = 0) {
+    if (!this.on) return; const ctx = this.ensure(); if (!ctx) return;
+    const t = ctx.currentTime + delay, o = ctx.createOscillator(), gn = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t); if (slide) o.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
+    gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(vol, t + .01); gn.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(gn).connect(ctx.destination); o.start(t); o.stop(t + dur + .05);
+  },
+  tick() { this.tone(1200, .03, "square", .025); },
+  pop() { this.tone(520, .09, "triangle", .06, 0, 1.6); },
+  good() { [523, 659, 784].forEach((f, i) => this.tone(f, .18, "triangle", .07, i * .07)); },
+  great() { [523, 659, 784, 1046].forEach((f, i) => this.tone(f, .3, "triangle", .08, i * .09)); },
+  bad() { this.tone(220, .35, "sawtooth", .04, 0, .6); },
+  chime() { [392, 523, 659, 784].forEach((f, i) => this.tone(f, 1.2, "sine", .05, i * .12)); },
+  death() { [330, 262, 196].forEach((f, i) => this.tone(f, 1.6, "sine", .05, i * .45)); },
+};
+const soundBtn = document.getElementById("sound");
+function paintSound() { soundBtn.textContent = Sound.on ? "Звук: вкл" : "Звук: выкл"; soundBtn.setAttribute("aria-pressed", Sound.on); }
+soundBtn.onclick = () => { Sound.on = !Sound.on; save("lottery.sound", Sound.on); paintSound(); if (Sound.on) Sound.pop(); };
+paintSound();
+
+// ---------- Состояние ----------
+let P = null, twins = [], mode = "random", queue = [], used = [], extraLeft = 1, toasted = new Set();
+
+function chips(eff, odds) {
+  const list = (Array.isArray(eff) ? eff : Object.entries(eff || {})).map(([k, v]) => `<span class="chip ${v > 0 ? "up" : "down"}">${v > 0 ? "+" : ""}${v} ${resName[k].toLowerCase()}</span>`);
+  if (odds != null && odds < 1) list.unshift(`<span class="chip odds">шанс ${Math.round(odds * 100)}%</span>`);
+  return `<div class="chips">${list.join("")}</div>`;
+}
+function familyLine(p) {
+  const bits = [];
+  if (p.partner) bits.push(`${p.married ? g(p, "жена", "муж") : "пара"}: ${p.partner.first}`);
+  else if (p.f.widowed) bits.push(g(p, "вдовец", "вдова"));
+  else if (p.f.divorced) bits.push("в разводе");
+  if (p.kids.length) bits.push(`дети: ${p.kids.map(k => k.first).join(", ")}`);
+  return bits.join(" · ");
+}
+function jobLine(p) { return p.retired ? "на пенсии" : p.f.jail ? "в заключении" : p.job ? `${jobName(p).toLowerCase()}${p.jobLvl > 1 ? ", уровень " + p.jobLvl : ""}` : p.age >= 18 ? "без постоянной работы" : ""; }
+
+// ---------- HUD: живёт всю жизнь, чтобы шкалы и возраст анимировались ----------
+const TL_MAX = 100;
+function renderGame() {
+  const p = P;
+  app.innerHTML = `<div class="panel hud fade" id="hud">
+    <div class="row between">
+      <div class="stack" style="gap:4px;min-width:0">
+        <span class="eyebrow" id="h-country"></span>
+        <span class="who">${esc(fullName(p))}</span>
+        <div class="age" id="h-age">${years(p.age)}</div>
+      </div>
+      <div class="stack" id="h-dream" style="gap:2px;text-align:right;max-width:50%"></div>
+    </div>
+    <div class="timeline" aria-hidden="true"><div class="rail"></div><div class="lived" id="h-lived"></div>
+      <div class="avg" style="left:${Math.min(98, p.home.le / TL_MAX * 100)}%"><span>в среднем ${Math.round(p.home.le)}</span></div><div class="me" id="h-me"></div></div>
+    <div class="facts" id="h-facts"></div>
+    <div class="bars">${RES.map(([k, n]) => `<div class="bar" id="b-${k}"><span>${n}</span><div class="track"><div class="fill" style="width:${p.r[k]}%"></div></div><span class="n">${p.r[k]}</span></div>`).join("")}</div>
+  </div>
+  <section id="stage" class="stack"></section>`;
+  updateHud();
+}
+function updateHud(changes = []) {
+  const p = P;
+  document.getElementById("h-country").textContent = p.c.n + (p.f.emigrated && !p.f.returned ? " · родина: " + p.home.n : "");
+  document.getElementById("h-dream").innerHTML = p.dream ? `<span class="eyebrow">Мечта</span><span class="dream ${p.dreamDone ? "done" : ""}">${p.dreamDone ? "✓ " : ""}${p.dream.t}</span><span class="note">${p.dream.d}</span>` : "";
+  const fam = familyLine(p), job = jobLine(p);
+  document.getElementById("h-facts").innerHTML = `${job ? `<span>${job}</span>` : ""}${fam ? `<span>${esc(fam)}</span>` : ""}`;
+  const pos = Math.min(100, p.age / TL_MAX * 100) + "%";
+  document.getElementById("h-lived").style.width = pos;
+  document.getElementById("h-me").style.left = pos;
+  const sum = {};
+  for (const [k, v] of changes) sum[k] = (sum[k] || 0) + v;
+  for (const [k] of RES) {
+    const row = document.getElementById("b-" + k), fill = row.querySelector(".fill"), n = row.querySelector(".n");
+    const from = +n.textContent, to = p.r[k];
+    fill.style.width = to + "%";
+    row.classList.toggle("low", to < 20);
+    if (from !== to) {
+      tween(from, to, 700, v => n.textContent = Math.round(v));
+      const cls = to > from ? "flash-up" : "flash-down";
+      row.classList.add(cls); setTimeout(() => row.classList.remove(cls), 800);
+    }
+    const d = sum[k] ?? (to - from);
+    if (d) { const el = document.createElement("span"); el.className = "delta " + (d > 0 ? "up" : "down"); el.textContent = (d > 0 ? "+" : "") + d; row.appendChild(el); setTimeout(() => el.remove(), 1400); }
+  }
+  setMood(p);
+}
+async function tickAge(from, to) {
+  const el = document.getElementById("h-age");
+  for (let a = from + 1; a <= to; a++) {
+    el.textContent = years(a); el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick");
+    Sound.tick();
+    const pos = Math.min(100, a / TL_MAX * 100) + "%";
+    document.getElementById("h-lived").style.width = pos; document.getElementById("h-me").style.left = pos;
+    await sleep(140);
+  }
+}
+const stage = () => document.getElementById("stage");
+
+// ---------- Экраны ----------
+function screenStart() {
+  document.body.classList.remove("dim"); setMood(null);
+  const lives = load("lottery.lives", []), atlas = load("lottery.atlas", []), got = load("lottery.ach", []);
+  app.innerHTML = `<section class="stack" style="gap:18px">
+    <span class="eyebrow fade">Каждую секунду рождается около 4 детей</span>
+    <h1 class="fade" style="--d:1">Лотерея <em>рождения</em></h1>
+    <p class="muted fade" style="--d:2">Ты родишься одним из них. Страна, семья, имя и характер выпадают по реальной статистике ${COUNTRIES.length} стран. Решай, чему посвятить каждые пять лет, делай выбор и попробуй исполнить мечту. Чем труднее старт, тем больше очков.</p>
+    <div class="row fade" style="--d:3">
+      <button id="b-random" class="big pulse">Родиться</button>
+      <button id="b-daily" class="ghost">Рождение дня · ${today().split("-").reverse().slice(0, 2).join(".")}</button>
+      ${window.Platform && Platform.desktop ? `<button id="b-quit" class="ghost">Выйти</button>` : ""}
+    </div>
+  </section>
+  <section class="panel fade" style="--d:4">
+    <div class="row between"><span class="eyebrow">Атлас рождений</span><span class="note">${atlas.length} из ${COUNTRIES.length} стран</span></div>
+    <p class="note">${atlas.length ? atlas.slice(0, 40).map(esc).join(" · ") + (atlas.length > 40 ? " …" : "") : "Здесь появятся страны, в которых ты рождался."}</p>
+  </section>
+  <section class="panel fade" style="--d:5">
+    <div class="row between"><span class="eyebrow">Достижения</span><span class="note">${got.length} из ${ACHIEVEMENTS.length}</span></div>
+    <div class="badges">${ACHIEVEMENTS.map(a => `<span class="badge ${got.includes(a.id) ? "on" : ""}" title="${esc(a.d)}">${a.n}</span>`).join("")}</div>
+  </section>
+  ${lives.length ? `<section class="panel fade" style="--d:6"><span class="eyebrow">Прожитые жизни</span><ul class="list">${lives.slice(0, 8).map(l => `<li><span>${esc(l.name)}, ${esc(l.country)}</span><span>${years(l.age)} · ${fmt(l.score)}</span></li>`).join("")}</ul></section>` : ""}
+  <p class="note">Прототип. Данные: ООН, ВОЗ, Всемирный банк. Смерть и болезни случаются с реальной частотой, но без подробностей. Нажми на экран, чтобы ускорить анимацию.</p>`;
+  document.getElementById("b-random").onclick = () => begin("random");
+  document.getElementById("b-daily").onclick = () => begin("daily");
+  const q = document.getElementById("b-quit"); if (q) q.onclick = () => Platform.quit();
+  scrollTo(0, 0);
+}
+
+async function begin(m) {
+  mode = m; toasted = new Set();
+  document.body.classList.remove("dim");
+  setSeed(m === "daily" ? "day-" + today() : null);
+  P = newPerson();
+  twins = [0, 1, 2, 3].map(() => newPerson());
+  await roulette(P);
+  screenBirth();
+}
+
+// рулетка: страны мелькают с частотой реальных рождений и замедляются на твоей
+async function roulette(p) {
+  skipping = false;
+  overlay.innerHTML = `<div class="roulette"><span class="eyebrow">Рождение</span><div class="slot" id="slot">…</div><div class="odds" id="odds">&nbsp;</div><div class="counter" id="cnt">&nbsp;</div></div>`;
+  overlay.classList.add("show");
+  Sound.ensure();
+  const slot = document.getElementById("slot"), cnt = document.getElementById("cnt");
+  const steps = 28;
+  for (let i = 0; i < steps; i++) {
+    const c = weighted(COUNTRIES, x => x.b);
+    slot.textContent = c.n; Sound.tick();
+    cnt.textContent = `рождений в мире за это время: ${fmt(Math.round((i + 1) * 4.3))}`;
+    await sleep(35 + Math.pow(i / steps, 3) * 320);
+    if (skipping) break;
+  }
+  slot.textContent = p.c.n; slot.classList.add("final");
+  Sound.chime(); window.Field && Field.burst();
+  await tween(1, p.c.odds, 900, v => document.getElementById("odds").textContent = "шанс 1 из " + fmt(Math.round(v)));
+  if (p.c.odds >= 500) burst({ particleCount: 60 });
+  skipping = false;
+  await sleep(1200);
+  overlay.classList.remove("show");
+  await sleep(250);
+}
+
+async function typeInto(el, text, ms = 45) {
+  el.textContent = "";
+  for (const ch of text) { el.textContent += ch; if (ch !== " ") Sound.tone(900 + Math.random() * 300, .02, "square", .012); await sleep(ms); }
+}
+
+async function screenBirth() {
+  const p = P, c = p.c;
+  skipping = false;
+  setMood(p);
+  app.innerHTML = `<section class="stack">
+    <span class="eyebrow fade">${mode === "daily" ? "Рождение дня" : "Только что"} · ${g(p, "мальчик", "девочка")}</span>
+    <h1 id="b-name">&nbsp;</h1>
+    <p class="muted fade" style="--d:2">${c.n}, ${c.part}. Шанс родиться здесь: 1 из ${fmt(c.odds)}. Семья ${QUINTILE[p.q]} по меркам страны.</p>
+  </section>
+  <section class="panel fade" style="--d:4">
+    <span class="eyebrow">Семья</span>
+    <ul class="list">
+      <li><span>Отец</span><span>${esc(p.parents.father)}</span></li>
+      <li><span>Мать</span><span>${esc(p.parents.mother)}</span></li>
+      <li><span>Братья и сёстры</span><span>${p.siblings || "нет"}</span></li>
+    </ul>
+    <span class="eyebrow">Характер</span>
+    <div class="stack" style="gap:6px">${p.traits.map(t => `<p><b>${TRAITS[t].n}.</b> <span class="muted">${TRAITS[t].d}</span></p>`).join("")}</div>
+  </section>
+  <section class="panel fade" style="--d:6"><div class="stats">
+    <div class="stat"><span class="eyebrow">Живут в среднем</span><span class="v">${c.le.toFixed(1)}</span></div>
+    <div class="stat"><span class="eyebrow">Не доживают до 5</span><span class="v">${(c.u5 * 100).toFixed(1)}%</span></div>
+    <div class="stat"><span class="eyebrow">Доход на человека</span><span class="v">$${fmt(c.g)}</span></div>
+    <div class="stat"><span class="eyebrow">Множитель очков</span><span class="v">×${difficulty(p).toFixed(2)}</span></div>
+  </div></section>
+  <section class="panel fade" style="--d:8"><span class="eyebrow">Родились в ту же секунду</span>
+    <ul class="list">${twins.map(t => `<li><span>${esc(fullName(t))}</span><span>${t.c.n}</span></li>`).join("")}</ul>
+  </section>
+  <div class="row fade" style="--d:10"><button id="go" class="big pulse">Начать жизнь</button></div>`;
+  scrollTo(0, 0);
+  document.getElementById("go").onclick = () => { renderGame(); finishStage(); };
+  await typeInto(document.getElementById("b-name"), fullName(p));
+}
+
+function nextStage() {
+  used = []; extraLeft = 1; skipping = false;
+  if (P.age === 15 && !P.dream) return screenDream();
+  if (P.age < 10) { P.focus = null; queue = cardsFor(P); return playCard(); }
+  screenFocus();
+}
+
+function screenDream() {
+  const opts = dreamChoices(P);
+  stage().innerHTML = `<span class="eyebrow enter">Пауза · 15 лет</span><h2 class="enter" style="--i:1">О чём ты мечтаешь?</h2>
+  <p class="muted enter" style="--i:2">Если мечта сбудется, она даст 600 очков, умноженных на трудность старта.</p>
+  ${opts.map((d, i) => `<button class="option enter" style="--i:${i + 3}" data-i="${i}"><b>${d.t}</b><span class="note">${d.d}</span></button>`).join("")}`;
+  Sound.pop();
+  stage().querySelectorAll(".option").forEach(b => b.onclick = async () => {
+    P.dream = opts[+b.dataset.i];
+    stage().querySelectorAll(".option").forEach(o => o.classList.add(o === b ? "chosen" : "dimmed"));
+    Sound.good(); updateHud(); toast("Мечта выбрана", P.dream.t);
+    await sleep(700);
+    screenFocus();
+  });
+}
+
+const FOCUS_ICON = { study: "📚", work: "🛠️", people: "🤝", health: "🫀", rest: "🌿" };
+function screenFocus() {
+  const opts = FOCUS.filter(f => !f.min || P.age >= f.min);
+  stage().innerHTML = `<span class="eyebrow enter">${P.age}–${P.age + 4}</span><h2 class="enter" style="--i:1">Чему посвятить эти пять лет?</h2>
+  <p class="muted enter" style="--i:2">Фокус даёт прибавку и повышает шансы в решениях того же типа.</p>
+  <div class="focus-grid">${opts.map((f, i) => `<button class="option enter" style="--i:${i + 3}" data-id="${f.id}"><span class="ico" aria-hidden="true">${FOCUS_ICON[f.id]}</span><b>${f.n}</b><span class="note">${f.d}</span></button>`).join("")}</div>`;
+  Sound.pop();
+  stage().querySelectorAll(".option").forEach(b => b.onclick = async () => {
+    P.focus = b.dataset.id;
+    stage().querySelectorAll(".option").forEach(o => o.classList.add(o === b ? "chosen" : "dimmed"));
+    Sound.pop();
+    await sleep(350);
+    queue = cardsFor(P); playCard();
+  });
+}
+
+function playCard() {
+  let card = queue.shift();
+  while (card && !eligible(P, card)) card = queue.shift();
+  if (!card && extraLeft > 0) { card = followUp(P, used); if (card) extraLeft--; }
+  if (!card) return finishStage();
+  used.push(card.id);
+  const opts = optionsOf(P, card);
+  stage().innerHTML = `<span class="eyebrow enter">${card.t}</span><h2 class="enter" style="--i:1">${esc(txt(card.q, P))}</h2>
+  ${opts.map((o, i) => `<button class="option enter" style="--i:${i + 2}" data-i="${i}"><b>${esc(o.l)}</b>${chips(o.yes, chanceOf(P, o))}</button>`).join("")}`;
+  Sound.pop();
+  stage().querySelectorAll(".option").forEach(b => b.onclick = () => choose(card, opts[+b.dataset.i], b));
+}
+
+async function choose(card, opt, btn) {
+  skipping = false;
+  stage().querySelectorAll(".option").forEach(o => o.classList.add(o === btn ? "chosen" : "dimmed"));
+  const chance = chanceOf(P, opt);
+  const res = resolve(P, card, opt);
+  // бросок шанса: стрелка пробегает по шкале и останавливается в зелёной зоне или за ней
+  if (chance < 1) {
+    const roll = document.createElement("div");
+    roll.className = "roll"; roll.innerHTML = `<div class="zone" style="width:${chance * 100}%"></div><div class="needle"></div>`;
+    btn.appendChild(roll);
+    const land = res.ok ? Math.random() * chance * .95 : chance + Math.random() * (1 - chance) * .95 + .02;
+    const needle = roll.querySelector(".needle");
+    let last = -1;
+    await tween(0, 2 + land, 1100, v => {
+      const x = v <= 1 ? v : v <= 2 ? 2 - v : v - 2;
+      needle.style.left = `calc(${(x * 100).toFixed(1)}% - 1px)`;
+      const step = Math.floor(v * 10); if (step !== last) { last = step; Sound.tick(); }
+    }, t => 1 - Math.pow(1 - t, 2.4));
+  }
+  btn.classList.add(res.ok ? "win" : "lose");
+  const out = document.createElement("div");
+  out.innerHTML = `${chance < 1 ? `<span class="stamp ${res.ok ? "ok" : "no"}">${res.ok ? (chance < .4 ? "ПОВЕЗЛО!" : "ПОЛУЧИЛОСЬ") : "НЕ ВЫШЛО"}</span>` : ""}
+    ${res.text ? `<span class="result-text">${esc(res.text)}</span>` : ""}${res.changes.length ? chips(res.changes) : ""}`;
+  out.className = "stack"; out.style.gap = "6px";
+  btn.appendChild(out);
+  updateHud(res.changes);
+  if (chance >= 1) Sound.pop(); else if (res.ok) { chance < .4 ? Sound.great() : Sound.good(); if (chance < .4) burst({ particleCount: 70 }); buzz("success"); } else { Sound.bad(); buzz("fail"); }
+  const hint = document.createElement("p"); hint.className = "hint"; hint.textContent = "Нажми, чтобы продолжить";
+  stage().appendChild(hint);
+  skipping = false;
+  await sleep(chance < 1 ? 2200 : 1300);
+  const follow = extraLeft > 0 && followUp(P, used.concat(queue.map(c => c.id)));
+  if (follow) { queue.unshift(follow); extraLeft--; }
+  playCard();
+}
+
+function iconFor(cls, s) {
+  if (/Мечта сбылась/.test(s)) return ["star", "★"];
+  if (/Переезд|Поездка|Возвращение/.test(s)) return [cls, "✈"];
+  if (/Родил|появил|внук/i.test(s)) return [cls, "✿"];
+  if (/вместе|Свадьба|рядом/.test(s)) return [cls, "♥"];
+  if (/Умер|Умерла|Не стало/.test(s)) return [cls, "·"];
+  return [cls, cls === "up" ? "▲" : "▼"];
+}
+
+async function finishStage() {
+  skipping = false;
+  const from = P.age, logStart = P.log.length;
+  const before = { ...P.r };
+  liveStage(P);
+  const to = P.alive ? P.age : P.age;
+  stage().innerHTML = `<span class="eyebrow">${from}–${P.alive ? P.age - 1 : P.age}</span><h2>${P.alive ? "Проходят годы…" : "Последние годы"}</h2>`;
+  await tickAge(from, to);
+  const changes = RES.map(([k]) => [k, P.r[k] - before[k]]).filter(([, v]) => v);
+  updateHud(changes);
+  const items = P.log.slice(logStart);
+  stage().innerHTML = `<div class="panel"><span class="eyebrow">${from}–${P.alive ? P.age - 1 : P.age}</span>
+    <ul class="log">${items.length ? items.map(([c, s], i) => { const [cl, ic] = iconFor(c, s); return `<li class="${cl} pop" style="--i:${i}"><span class="ic">${ic}</span><span>${esc(s)}</span></li>`; }).join("") : `<li class="pop"><span class="ic">·</span><span>Обычные годы, без больших перемен.</span></li>`}</ul></div>`;
+  items.forEach(([c, s], i) => setTimeout(() => { if (/Мечта сбылась/.test(s)) { Sound.great(); burst({ particleCount: 140, spread: 100 }); toast("Мечта сбылась!", P.dream.t); } else c === "down" ? Sound.tone(260, .12, "triangle", .04) : Sound.tone(660, .1, "triangle", .04); }, REDUCE ? 0 : i * 380));
+  achievementToasts();
+  await sleep(items.length * 380 + 300);
+  if (!P.alive) { await sleep(900); return farewell(); }
+  const btn = document.createElement("div"); btn.className = "row enter";
+  btn.innerHTML = `<button id="go" class="big">Дальше</button>`;
+  stage().appendChild(btn);
+  document.getElementById("go").onclick = () => nextStage();
+}
+
+function achievementToasts() {
+  const atlas = load("lottery.atlas", []), got = load("lottery.ach", []);
+  for (const id of achievementsOf(P, atlas)) {
+    if (got.includes(id) || toasted.has(id)) continue;
+    toasted.add(id);
+    const a = ACHIEVEMENTS.find(x => x.id === id);
+    toast("Новое достижение: " + a.n, a.d); Sound.good();
+  }
+}
+
+// уход из жизни: тихая сцена со свечой
+async function farewell() {
+  skipping = false;
+  document.body.classList.add("dim");
+  window.Field && Field.fade();
+  Sound.death(); buzz("heavy");
+  overlay.innerHTML = `<div class="farewell"><div class="candle"></div><h2>${esc(fullName(P))}</h2><p class="age">${years(P.age)}</p><p class="muted">${esc(P.cause[0].toUpperCase() + P.cause.slice(1))}.</p></div>`;
+  overlay.classList.add("show");
+  await sleep(3600);
+  overlay.classList.remove("show");
+  await sleep(400);
+  screenEnd();
+}
+
+async function screenEnd() {
+  const p = P;
+  skipping = false;
+  twins.forEach(autoLife);
+  const s = score(p);
+  const atlas = load("lottery.atlas", []);
+  if (!atlas.includes(p.home.n)) atlas.unshift(p.home.n);
+  save("lottery.atlas", atlas);
+  const before = load("lottery.ach", []);
+  const now = achievementsOf(p, atlas);
+  const fresh = now.filter(a => !before.includes(a));
+  save("lottery.ach", [...new Set(before.concat(now))]);
+  if (window.Platform) Platform.unlock(now);
+  const lives = load("lottery.lives", []);
+  const best = lives.reduce((m, l) => Math.max(m, l.score), 0);
+  lives.unshift({ name: fullName(p), country: p.home.n, age: p.age, score: s, date: today() });
+  save("lottery.lives", lives.slice(0, 50));
+  const child = p.age < 5;
+  const share = `Лотерея рождения${mode === "daily" ? " · рождение дня " + today() : ""}: ${fullName(p)}, ${p.home.n}, ${years(p.age)}${p.dream ? (p.dreamDone ? ", мечта сбылась" : ", мечта не сбылась") : ""} · ${fmt(s)} очков`;
+  const all = [{ t: p, me: true }, ...twins.map(t => ({ t }))];
+  app.innerHTML = `<section class="stack">
+    <span class="eyebrow fade">${p.home.n}${p.f.emigrated && !p.f.returned ? " → " + p.c.n : ""}</span>
+    <h1 class="fade" style="--d:1">${esc(fullName(p))}</h1>
+    <p class="age fade" style="--d:2">${years(p.age)}</p>
+    <p class="muted fade" style="--d:3">Причина: ${p.cause}. ${child ? `Так случается с ${(p.home.u5 * 100).toFixed(1)} из 100 детей, родившихся в этой стране.` : `В среднем здесь живут ${p.c.le.toFixed(0)} лет.`}
+    ${p.dream ? (p.dreamDone ? ` Мечта сбылась: ${p.dream.t.toLowerCase()}.` : ` Мечта не сбылась: ${p.dream.t.toLowerCase()}.`) : ""}</p>
+  </section>
+  <section class="panel fade" style="--d:4"><div class="row between">
+    <div class="stack" style="gap:2px"><span class="eyebrow">Очки</span><span class="score" id="score">0</span></div>
+    <span class="note">(${p.age} × 10${p.dreamDone ? " + 600" : ""}) × ${difficulty(p).toFixed(2)}${s > best && lives.length > 1 ? " · новый рекорд!" : ""}</span></div>
+    <div class="facts">${p.job ? `<span>${jobName(p)}</span>` : ""}${p.kids.length ? `<span>${plural(p.kids.length, "ребёнок", "ребёнка", "детей")}</span>` : ""}${p.f.trips ? `<span>путешествий: ${p.f.trips}</span>` : ""}</div>
+  </section>
+  <section class="panel fade" style="--d:5"><span class="eyebrow">Родившиеся в ту же секунду</span>
+    <div class="race">${all.map(({ t, me }) => `<div class="lane ${me ? "me" : ""}"><div class="top"><span>${esc(fullName(t))}${me ? " (ты)" : ""}, ${t.home.n}${t.f.emigrated && !t.f.returned ? " → " + t.c.n : ""}</span><span>${years(t.age)}${t.dreamDone ? " · мечта ✓" : ""}</span></div><div class="track"><div class="run" data-w="${Math.min(100, t.age / 105 * 100)}"></div></div></div>`).join("")}</div>
+  </section>
+  ${now.length ? `<section class="panel fade" style="--d:6"><span class="eyebrow">Достижения этой жизни</span><div class="badges">${now.map((id, i) => { const a = ACHIEVEMENTS.find(x => x.id === id); return `<span class="badge ${fresh.includes(id) ? "new" : "on"}" style="--i:${i}" title="${esc(a.d)}">${a.n}${fresh.includes(id) ? " · новое" : ""}</span>`; }).join("")}</div></section>` : ""}
+  ${p.log.length ? `<section class="panel fade" style="--d:7"><span class="eyebrow">Биография</span><ul class="log">${p.log.map(([c, s, a]) => { const [cl, ic] = iconFor(c, s); return `<li class="${cl}"><span class="ic">${ic}</span><span><span class="y">${a}</span>${esc(s)}</span></li>`; }).join("")}</ul></section>` : ""}
+  <div class="row fade" style="--d:8"><button id="again" class="big pulse">Родиться снова</button><button id="copy" class="ghost">Скопировать результат</button><button id="home" class="ghost">В начало</button></div>
+  <p class="note" id="share">${esc(share)}</p>`;
+  document.body.classList.remove("dim");
+  window.Field && Field.restore();
+  scrollTo(0, 0);
+  document.getElementById("again").onclick = () => begin("random");
+  document.getElementById("home").onclick = () => screenStart();
+  document.getElementById("copy").onclick = () => {
+    const btn = document.getElementById("copy");
+    if (!navigator.clipboard) return selectShare();
+    navigator.clipboard.writeText(share).then(() => btn.textContent = "Скопировано", selectShare);
+  };
+  await sleep(500);
+  requestAnimationFrame(() => document.querySelectorAll(".run").forEach(r => r.style.width = r.dataset.w + "%"));
+  let lastTick = 0;
+  await tween(0, s, 1600, v => { document.getElementById("score").textContent = fmt(Math.round(v)); const now = performance.now(); if (now - lastTick > 70) { lastTick = now; Sound.tick(); } });
+  if (p.dreamDone || fresh.length || (s > best && lives.length > 1)) { Sound.great(); burst({ particleCount: 120, spread: 90 }); }
+}
+function selectShare() { const r = document.createRange(); r.selectNodeContents(document.getElementById("share")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+// ---------- Фон: рождения как вспышки ----------
+window.Field = (function field() {
+  const cv = document.getElementById("field"), ctx = cv.getContext("2d");
+  let dots = [], W = 0, H = 0, faded = false, rings = [];
+  function size() { const r = devicePixelRatio || 1; W = innerWidth; H = innerHeight; cv.width = W * r; cv.height = H * r; ctx.setTransform(r, 0, 0, r, 0, 0);
+    dots = Array.from({ length: Math.round(W * H / 2600) }, () => ({ x: Math.random() * W, y: Math.random() * H, a: Math.random() * .5 + .1, f: 0, vy: -(Math.random() * .08 + .02) })); }
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    for (const d of dots) {
+      if (!REDUCE) { d.y += d.vy; if (d.y < -4) d.y = H + 4; }
+      if (d.f > 0) d.f -= .015;
+      ctx.fillStyle = d.f > 0 ? `rgba(242,180,90,${.3 + d.f})` : `rgba(233,230,242,${d.a})`;
+      ctx.beginPath(); ctx.arc(d.x, d.y, d.f > 0 ? 1.6 + d.f * 1.8 : 1, 0, 6.283); ctx.fill();
+    }
+    rings = rings.filter(r => r.a > 0);
+    for (const r of rings) { r.r += 3.2; r.a -= .012; ctx.strokeStyle = `rgba(242,180,90,${r.a})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, 6.283); ctx.stroke(); }
+    if (!REDUCE) requestAnimationFrame(draw);
+  }
+  size(); addEventListener("resize", size);
+  if (!REDUCE) setInterval(() => { if (faded) return; for (let i = 0; i < 4; i++) { const d = dots[Math.floor(Math.random() * dots.length)]; if (d) d.f = 1; } }, 1000);
+  draw();
+  return {
+    burst() { rings.push({ x: W / 2, y: H * .4, r: 10, a: .8 }, { x: W / 2, y: H * .4, r: 0, a: .5 }); dots.slice(0, 60).forEach(d => d.f = 1); },
+    fade() { faded = true; },
+    restore() { faded = false; },
+  };
+})();
+
+(window.Platform ? Platform.ready : Promise.resolve()).catch(() => {}).then(screenStart);
+</script>
