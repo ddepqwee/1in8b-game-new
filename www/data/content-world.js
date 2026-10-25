@@ -30,7 +30,7 @@ window.CARDS.push(
     { l: "Сдавать как есть", ch: () => 1, yes: { j: 3 }, ys: "Без нервов, без рекордов." },
   ]},
   { id: "bestfriend", from: 5, to: 14, if: p => !p.friend, w: 3, t: "Друг", q: () => "В классе появился новенький. Он сидит один.", o: [
-    { l: "Подсесть и познакомиться", tags: ["social"], ch: () => .85, yes: { t: 10, j: 6 }, no: { j: -2 }, ys: p => `${fr(p)} теперь твой лучший друг.`, ns: "Не нашли общий язык.", pre: p => makeFriend(p), setNo: p => p.friend = null },
+    { l: "Подсесть и познакомиться", tags: ["social"], ch: () => .85, yes: { t: 10, j: 6 }, no: { j: -2 }, ys: p => `${fr(p)} теперь ${frG(p, "твой лучший друг", "твоя лучшая подруга")}.`, ns: "Не нашли общий язык.", pre: p => makeFriend(p), setNo: p => p.friend = null },
     { l: "Не лезть", ch: () => 1, yes: {}, ys: "Каждый сам по себе." },
   ]},
   { id: "friendloan", from: 22, to: 60, if: p => p.friend && p.friend.alive && p.r.m >= 25, t: "Просьба друга", q: p => `${fr(p)} ${frG(p, "попал", "попала")} в беду и просит в долг.`, o: [
@@ -64,22 +64,22 @@ window.CARDS.push(
 );
 
 window.EVENTS.push(
-  { w: p => inC(p, QUAKE) ? .05 : 0, e: { h: -8, m: -12, j: -6 }, s: "Землетрясение. Дом пострадал, все живы.", heavy: false },
-  { w: p => inC(p, STORM) ? .07 : 0, e: { m: -10, j: -4 }, s: "Тайфун снёс крышу и затопил двор." },
-  { w: p => inC(p, MONSOON) ? .09 : 0, e: { m: -7, h: -4 }, s: "Муссонные дожди затопили улицы на неделю." },
-  { w: p => inC(p, DROUGHT) ? .1 : 0, e: { m: -10, h: -6 }, s: "Засуха. Скот пал, урожая нет." },
-  { w: p => malaria(p) ? .12 : 0, e: { h: -12 }, s: "Малярия. Несколько недель жара и бреда.", act: p => { if (rng() < .3) p.f.ill = true; } },
-  { w: p => inC(p, WINTER) && p.r.m < 40 ? .07 : 0, e: { h: -5, m: -5 }, s: "Лютая зима, отопление дорожает." },
-  { w: p => inC(p, OIL) && p.age >= 18 ? .06 : 0, e: { m: 10 }, s: "Нефть подорожала, в стране появились деньги." },
-  { w: p => inC(p, OIL) && p.age >= 18 ? .05 : 0, e: { m: -10, j: -3 }, s: "Нефть обвалилась, зарплаты урезали." },
-  { w: p => p.friend && p.friend.alive && p.age >= 20 && !p.f.friendWed ? .12 : 0, e: { t: 6, j: 5 }, s: p => `${fr(p)} ${frG(p, "женится", "выходит замуж")} и зовёт тебя свидетелем.`, act: p => { p.f.friendWed = true; } },
-  { w: p => p.friend && p.friend.alive && p.age >= 25 && p.r.m < 30 ? .1 : 0, e: { m: 8, t: 6 }, s: p => `${fr(p)} помог${frG(p, "", "ла")} деньгами в трудный момент.` },
-  { w: p => p.friend && p.friend.alive && p.age >= 20 && !p.f.friendAway ? .06 : 0, e: { t: -6 }, s: p => `${fr(p)} ${frG(p, "уехал", "уехала")} в другой город. Теперь только звонки.`, act: p => { p.f.friendAway = true; } },
-  { w: p => p.friend && p.friend.alive && p.age >= 55 ? clamp((p.age - 50) / 160, 0, .2) : 0, e: { j: -12, t: -8 }, s: p => `Не стало ${frG(p, "лучшего друга", "лучшей подруги")}, ${fr(p)}.`, act: p => { p.friend.alive = false; } },
-  { w: p => p.f.pet != null && p.age - p.f.pet >= 10 ? .35 : 0, e: { j: -8 }, s: "Старый пёс уснул и не проснулся.", act: p => { p.f.pet = null; } },
+  { id: "quake", w: p => inC(p, QUAKE) ? .05 : 0, e: { h: -8, m: -12, j: -6 }, s: "Землетрясение. Дом пострадал, все живы." },
+  { id: "typhoon", w: p => inC(p, STORM) ? .07 : 0, e: { m: -10, j: -4 }, s: "Тайфун снёс крышу и затопил двор." },
+  { id: "monsoon", w: p => inC(p, MONSOON) ? .09 : 0, e: { m: -7, h: -4 }, s: "Муссонные дожди затопили улицы на неделю." },
+  { id: "drought", w: p => inC(p, DROUGHT) ? .1 : 0, e: { m: -10, h: -6 }, s: "Засуха. Скот пал, урожая нет." },
+  { id: "malaria", w: p => malaria(p) ? .12 : 0, e: { h: -12 }, s: "Малярия. Несколько недель жара и бреда.", act: p => { if (rng() < .3) p.f.ill = true; } },
+  { id: "winter", w: p => inC(p, WINTER) && p.r.m < 40 ? .07 : 0, e: { h: -5, m: -5 }, s: "Лютая зима, отопление дорожает." },
+  { id: "oilup", w: p => inC(p, OIL) && p.age >= 18 ? .06 : 0, e: { m: 10 }, s: "Нефть подорожала, в стране появились деньги." },
+  { id: "oildown", w: p => inC(p, OIL) && p.age >= 18 ? .05 : 0, e: { m: -10, j: -3 }, s: "Нефть обвалилась, зарплаты урезали." },
+  { id: "fwed", w: p => p.friend && p.friend.alive && p.age >= 20 && !p.f.friendWed ? .12 : 0, e: { t: 6, j: 5 }, s: p => `${fr(p)} ${frG(p, "женится", "выходит замуж")} и зовёт тебя свидетелем.`, act: p => { p.f.friendWed = true; } },
+  { id: "fhelp", w: p => p.friend && p.friend.alive && p.age >= 25 && p.r.m < 30 ? .1 : 0, e: { m: 8, t: 6 }, s: p => `${fr(p)} помог${frG(p, "", "ла")} деньгами в трудный момент.` },
+  { id: "faway", w: p => p.friend && p.friend.alive && p.age >= 20 && !p.f.friendAway ? .06 : 0, e: { t: -6 }, s: p => `${fr(p)} ${frG(p, "уехал", "уехала")} в другой город. Теперь только звонки.`, act: p => { p.f.friendAway = true; } },
+  { id: "fdeath", w: p => p.friend && p.friend.alive && p.age >= 55 ? clamp((p.age - 50) / 160, 0, .2) : 0, e: { j: -12, t: -8 }, s: p => `Не стало ${frG(p, "лучшего друга", "лучшей подруги")}, ${fr(p)}.`, act: p => { p.friend.alive = false; } },
+  { id: "petdeath", w: p => p.f.pet != null && p.age - p.f.pet >= 10 ? .35 : 0, e: { j: -8 }, s: "Старый пёс уснул и не проснулся.", act: p => { p.f.pet = null; } },
 );
 // тяжёлые события из основного набора, которых нет в мягком режиме
-for (const e of window.EVENTS) if (/конфликт|Ограбили|Пандемия|Авария/.test(typeof e.s === "string" ? e.s : "")) e.heavy = true;
+for (const e of window.EVENTS) if (["war", "robbed", "pandemic", "crash"].includes(e.id)) e.heavy = true;
 for (const c of window.CARDS) if (c.id === "crime") c.heavy = true;
 
 window.ACHIEVEMENTS.push(
@@ -87,4 +87,4 @@ window.ACHIEVEMENTS.push(
   { id: "friend", n: "Друзья навек", d: "Прожить жизнь рядом с лучшим другом до 70", ok: p => p.friend && p.friend.alive && p.age >= 70 },
   { id: "survivor", n: "Стихии не сломили", d: "Пережить два стихийных бедствия и дожить до 70", ok: p => p.f.disaster >= 2 && p.age >= 70 },
 );
-for (const e of window.EVENTS) if (/Землетрясение|Тайфун|Засуха/.test(typeof e.s === "string" ? e.s : "")) { const act = e.act; e.act = p => { p.f.disaster = (p.f.disaster || 0) + 1; if (act) act(p); }; }
+for (const e of window.EVENTS) if (["quake", "typhoon", "drought"].includes(e.id)) { const act = e.act; e.act = p => { p.f.disaster = (p.f.disaster || 0) + 1; if (act) act(p); }; }

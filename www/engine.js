@@ -18,7 +18,9 @@ const GOMPERTZ_B = 0.085;
 const HAZARD_FIX = 0.85;
 const COUNTRIES = window.COUNTRY_ROWS.trim().split("\n").map(line => {
   const [n, b, le, u5, gdp, reg, part] = line.split(";");
-  return { n, b: Math.max(+b, .003), le: +le, u5: +u5 / 100, g: +gdp, reg, part };
+  const en = window.LANG === "en";
+  // n — внутреннее имя (ключ в данных), name и partName — для показа на выбранном языке
+  return { n, name: en ? window.COUNTRY_EN[n] || n : n, b: Math.max(+b, .003), le: +le, u5: +u5 / 100, g: +gdp, reg, part, partName: en ? window.PART_EN[part] || part : part };
 });
 const TOTAL_SHARE = COUNTRIES.reduce((s, c) => s + c.b, 0);
 function e5(A) { let s = 1, sum = 0; for (let x = 5; x < 120; x++) { const p = 1 - Math.exp(-A * Math.exp(GOMPERTZ_B * x)); sum += s * (1 - p / 2); s *= 1 - p; } return sum; }
@@ -36,7 +38,7 @@ COUNTRIES.forEach(c => {
 const pickCountry = (p, filter = c => c !== p.c) => weighted(COUNTRIES.filter(filter), c => Math.sqrt(c.b));
 
 // ---------- Имена ----------
-function nameSet(reg) { return window.NAMES[reg] || window.NAMES.en; }
+function nameSet(reg) { const all = window.LANG === "en" && window.NAMES_EN ? window.NAMES_EN : window.NAMES; return all[reg] || all.en; }
 function surnameFor(base, sex) { return Array.isArray(base) ? base[sex === "f" ? 1 : 0] : base; }
 function fullName(x) { return x.order === "sf" ? `${x.last} ${x.first}` : `${x.first} ${x.last}`; }
 // family: { base, father } — общая фамилия семьи или имя отца для культур без фамилий
@@ -55,8 +57,8 @@ function newFamily(reg) {
 }
 
 // ---------- Человек ----------
-const RES = [["h", "Здоровье"], ["m", "Деньги"], ["k", "Знания"], ["t", "Близкие"], ["j", "Счастье"]];
-const QUINTILE = ["", "очень бедной", "бедной", "средней", "обеспеченной", "богатой"];
+const RES = [["h", tr("Здоровье", "Health")], ["m", tr("Деньги", "Money")], ["k", tr("Знания", "Knowledge")], ["t", tr("Близкие", "Loved ones")], ["j", tr("Счастье", "Happiness")]];
+const QUINTILE = tr(["", "очень бедной", "бедной", "средней", "обеспеченной", "богатой"], ["", "very poor", "poor", "middle-income", "well-off", "wealthy"]);
 const CONFLICTS = [["strong", "frail"], ["charm", "loner"], ["careful", "daring"]];
 
 function rollTraits() {
@@ -113,7 +115,7 @@ function apply(p, eff, soft = 1) {
 }
 
 // ---------- Работа, переезд, семья ----------
-function jobName(p, id = p.job) { const J = window.JOBS[id]; if (!J) return "Без работы"; return p.sex === "f" ? (J.nf || J.n) : (J.nm || J.n); }
+function jobName(p, id = p.job) { const J = window.JOBS[id]; if (!J) return tr("Без работы", "Unemployed"); return p.sex === "f" ? (J.nf || J.n) : (J.nm || J.n); }
 function setJob(p, id) {
   if (!id) return;
   p.job = id; p.jobLvl = 1; p.retired = false;
@@ -132,7 +134,7 @@ function pickMidJob(p) {
 function emigrate(p) {
   const dest = weighted(COUNTRIES.filter(c => c.d > .82 && c !== p.c), c => c.b);
   p.f.emigrated = true; p.f.returned = false; p.c = dest;
-  p.log.push(["up", `Переезд: ${dest.n}. Начинать заново тяжело, но возможностей больше.`, p.age]);
+  p.log.push(["up", tr(`Переезд: ${dest.name}. Начинать заново тяжело, но возможностей больше.`, `Moved to ${dest.name}. Starting over is hard, but there are more opportunities.`), p.age]);
 }
 function returnHome(p) { p.c = p.home; p.f.returned = true; p.f.undocumented = false; }
 function meetPartner(p) {
@@ -221,13 +223,21 @@ function incomeFor(p) {
   return Math.round((pay - cost) / 1.2);
 }
 
+const CAUSES = {
+  ill: ["болезнь, с которой не удалось справиться", "an illness that could not be beaten"],
+  infection: ["инфекция", "an infection"], birth: ["осложнения после рождения", "complications after birth"], hunger: ["недоедание и болезнь", "malnutrition and disease"],
+  accident: ["несчастный случай", "an accident"], infectious: ["инфекционная болезнь", "an infectious disease"], road: ["авария на дороге", "a road accident"], violence: ["насилие", "violence"],
+  heart: ["болезнь сердца", "heart disease"], stroke: ["инсульт", "a stroke"], cancer: ["рак", "cancer"], sleep: ["старость, во сне", "old age, in their sleep"],
+};
 function deathCause(p, x) {
-  if (p.f.ill) return "болезнь, с которой не удалось справиться";
   const d = p.c.d;
-  if (x < 5) return weighted(["инфекция", "осложнения после рождения", "недоедание и болезнь"], c => c === "недоедание и болезнь" ? 1 - d : 1);
-  if (x < 40) return weighted(["несчастный случай", "инфекционная болезнь", "авария на дороге", "насилие"], c => c === "инфекционная болезнь" ? 1.5 - d : c === "насилие" ? (softMode() ? 0 : .4) : 1);
-  if (x < 70) return weighted(["болезнь сердца", "инсульт", "рак", "инфекционная болезнь"], c => c === "инфекционная болезнь" ? 1 - d : 1);
-  return weighted(["болезнь сердца", "инсульт", "рак", "старость, во сне"], c => c === "старость, во сне" ? (x >= 85 ? 2 : .5) : 1);
+  let c;
+  if (p.f.ill) c = "ill";
+  else if (x < 5) c = weighted(["infection", "birth", "hunger"], c => c === "hunger" ? 1 - d : 1);
+  else if (x < 40) c = weighted(["accident", "infectious", "road", "violence"], c => c === "infectious" ? 1.5 - d : c === "violence" ? (softMode() ? 0 : .4) : 1);
+  else if (x < 70) c = weighted(["heart", "stroke", "cancer", "infectious"], c => c === "infectious" ? 1 - d : 1);
+  else c = weighted(["heart", "stroke", "cancer", "sleep"], c => c === "sleep" ? (x >= 85 ? 2 : .5) : 1);
+  return tr(...CAUSES[c]);
 }
 
 function liveStage(p) {
@@ -266,7 +276,7 @@ function liveStage(p) {
   checkDream(p);
 }
 function checkDream(p) {
-  if (p.dream && !p.dreamDone && p.dream.ok(p)) { p.dreamDone = true; p.log.push(["up", `Мечта сбылась: ${p.dream.t.toLowerCase()}.`, p.age]); }
+  if (p.dream && !p.dreamDone && p.dream.ok(p)) { p.dreamDone = true; p.log.push(["up", tr(`Мечта сбылась: ${p.dream.t.toLowerCase()}.`, `Dream come true: ${p.dream.t.toLowerCase()}.`), p.age]); }
 }
 function dreamChoices(p) { return shuffle(window.DREAMS.filter(d => !d.need || d.need(p))).slice(0, 3); }
 

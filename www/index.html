@@ -186,6 +186,7 @@ button.big { font-size: 18px; padding: 16px 26px; }
 .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--muted); transition: transform .2s ease, background .2s ease; }
 .switch[aria-checked="true"] { background: #1f3b31; border-color: var(--good); }
 .switch[aria-checked="true"]::after { transform: translateX(20px); background: var(--good); }
+.lang { padding: 6px 10px; font-size: 13px; }
 button.danger { background: transparent; color: var(--bad); border: 1px solid var(--bad); box-shadow: none; }
 .tip { display: grid; gap: 8px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--life); background: rgba(242,180,90,.08); font-size: 14px; animation: in .4s ease both; }
 .tip .eyebrow { color: var(--life); }
@@ -203,26 +204,35 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border: 1px s
 
 <div id="mood"></div>
 <canvas id="field" aria-hidden="true"></canvas>
-<button id="gear" class="ghost" aria-haspopup="dialog" aria-label="Настройки" title="Настройки">⚙</button>
-<div id="settings" role="dialog" aria-modal="true" aria-label="Настройки"></div>
+<button id="gear" class="ghost" aria-haspopup="dialog" aria-label="Settings" title="Settings">⚙</button>
+<div id="settings" role="dialog" aria-modal="true"></div>
 <main id="app" aria-live="polite"></main>
 <div id="overlay" aria-live="assertive"></div>
 <div id="toasts" aria-live="polite"></div>
 
+<script src="i18n.js"></script>
 <script src="vendor/confetti.js"></script>
 <script src="vendor/platform.js"></script>
 <script src="data/countries.js"></script>
 <script src="data/names.js"></script>
 <script src="data/content.js"></script>
 <script src="data/content-world.js"></script>
+<script src="data/names-en.js"></script>
+<script src="data/lang-en.js"></script>
 <script src="engine.js"></script>
 <script>
 // ---------- Утилиты ----------
 const app = document.getElementById("app"), overlay = document.getElementById("overlay");
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const fmt = n => n.toLocaleString("ru-RU");
+const fmt = n => n.toLocaleString(tr("ru-RU", "en-US"));
+document.title = tr("Лотерея рождения", "Birth Lottery");
+document.getElementById("gear").setAttribute("aria-label", tr("Настройки", "Settings"));
+document.getElementById("gear").title = tr("Настройки", "Settings");
+document.getElementById("settings").setAttribute("aria-label", tr("Настройки", "Settings"));
 function plural(n, one, few, many) { const a = n % 10, b = n % 100; return n + " " + (a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many); }
-const years = n => plural(n, "год", "года", "лет");
+const years = n => tr(plural(n, "год", "года", "лет"), n === 1 ? "1 year" : n + " years");
+// страна по внутреннему имени (атлас и прожитые жизни хранят его) на языке игры
+const countryName = n => (COUNTRIES.find(c => c.n === n) || { name: n }).name;
 const resName = Object.fromEntries(RES);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 function save(key, val) { const s = JSON.stringify(val); try { localStorage.setItem(key, s); } catch (e) {} if (window.Platform) Platform.mirror(key, s); }
@@ -285,10 +295,10 @@ const Sound = {
 };
 const settingsBox = document.getElementById("settings");
 const SETTING_ROWS = [
-  ["sound", "Звук", "Короткие сигналы при выборе и бросках"],
-  ["fast", "Быстрые анимации", "Всё то же, но в два раза быстрее"],
-  ["soft", "Мягкий режим", "Без войн, преступлений, насилия и аварий"],
-  ["tips", "Подсказки", "Объяснения правил в первых жизнях"],
+  ["sound", tr("Звук", "Sound"), tr("Короткие сигналы при выборе и бросках", "Short sounds for choices and rolls")],
+  ["fast", tr("Быстрые анимации", "Fast animations"), tr("Всё то же, но в два раза быстрее", "Everything the same, twice as fast")],
+  ["soft", tr("Мягкий режим", "Gentle mode"), tr("Без войн, преступлений, насилия и аварий", "No war, crime, violence or accidents")],
+  ["tips", tr("Подсказки", "Hints"), tr("Объяснения правил в первых жизнях", "Rule explanations in your first lives")],
 ];
 const getSetting = k => k === "sound" ? Sound.on : SETTINGS[k];
 function setSetting(k, v) {
@@ -298,21 +308,24 @@ function setSetting(k, v) {
 function openSettings() {
   let armed = false;
   settingsBox.innerHTML = `<section class="panel stack" style="gap:6px">
-    <div class="row between"><h2 style="margin:0">Настройки</h2><button id="s-close" class="ghost" aria-label="Закрыть">Готово</button></div>
+    <div class="row between"><h2 style="margin:0">${tr("Настройки", "Settings")}</h2><button id="s-close" class="ghost">${tr("Готово", "Done")}</button></div>
+    <div class="setting"><span><b>${tr("Язык", "Language")}</b><span class="note">${tr("Игра перезапустится", "The game will restart")}</span></span>
+      <span class="row" style="gap:6px">${[["ru", "Русский"], ["en", "English"]].map(([l, n]) => `<button class="lang ${l === LANG ? "" : "ghost"}" data-lang="${l}" aria-pressed="${l === LANG}">${n}</button>`).join("")}</span></div>
     ${SETTING_ROWS.map(([k, n, d]) => `<div class="setting"><span><b>${n}</b><span class="note">${d}</span></span>
       <button class="switch" role="switch" data-k="${k}" aria-checked="${!!getSetting(k)}" aria-label="${n}"></button></div>`).join("")}
-    <div class="setting"><span><b>Сбросить прогресс</b><span class="note" id="s-reset-note">Атлас, достижения и прожитые жизни</span></span>
-      <button id="s-reset" class="danger">Сбросить</button></div>
-    <p class="note keys">Клавиши: <kbd>1</kbd>–<kbd>5</kbd> выбор, <kbd>Enter</kbd> или <kbd>Пробел</kbd> дальше, <kbd>Esc</kbd> настройки.</p>
+    <div class="setting"><span><b>${tr("Сбросить прогресс", "Reset progress")}</b><span class="note" id="s-reset-note">${tr("Атлас, достижения и прожитые жизни", "Atlas, achievements and past lives")}</span></span>
+      <button id="s-reset" class="danger">${tr("Сбросить", "Reset")}</button></div>
+    <p class="note keys">${tr("Клавиши", "Keys")}: <kbd>1</kbd>–<kbd>5</kbd> ${tr("выбор", "choose")}, <kbd>Enter</kbd> ${tr("или", "or")} <kbd>${tr("Пробел", "Space")}</kbd> ${tr("дальше", "continue")}, <kbd>Esc</kbd> ${tr("настройки", "settings")}.</p>
   </section>`;
   settingsBox.querySelectorAll(".switch").forEach(b => b.onclick = () => { const v = b.getAttribute("aria-checked") !== "true"; b.setAttribute("aria-checked", v); setSetting(b.dataset.k, v); });
   const reset = document.getElementById("s-reset");
   reset.onclick = () => {
-    if (!armed) { armed = true; reset.textContent = "Точно сбросить?"; document.getElementById("s-reset-note").textContent = "Нажми ещё раз. Отменить будет нельзя."; return; }
+    if (!armed) { armed = true; reset.textContent = tr("Точно сбросить?", "Are you sure?"); document.getElementById("s-reset-note").textContent = tr("Нажми ещё раз. Отменить будет нельзя.", "Press again. This can't be undone."); return; }
     ["lottery.lives", "lottery.atlas", "lottery.ach", "lottery.tipsSeen"].forEach(k => save(k, []));
-    reset.textContent = "Сброшено"; reset.disabled = true; document.getElementById("s-reset-note").textContent = "Прогресс очищен.";
+    reset.textContent = tr("Сброшено", "Reset done"); reset.disabled = true; document.getElementById("s-reset-note").textContent = tr("Прогресс очищен.", "Progress cleared.");
     if (!P) screenStart();
   };
+  settingsBox.querySelectorAll(".lang").forEach(b => b.onclick = () => { if (b.dataset.lang === LANG) return; save("lottery.lang", b.dataset.lang); location.reload(); });
   document.getElementById("s-close").onclick = closeSettings;
   settingsBox.classList.add("show");
   document.getElementById("s-close").focus();
@@ -327,7 +340,7 @@ function tip(key, title, text, where) {
   const seen = load("lottery.tipsSeen", []);
   if (seen.includes(key)) return;
   const el = document.createElement("div");
-  el.className = "tip"; el.innerHTML = `<span class="eyebrow">${title}</span><span>${text}</span><button class="ghost">Понятно</button>`;
+  el.className = "tip"; el.innerHTML = `<span class="eyebrow">${title}</span><span>${text}</span><button class="ghost">${tr("Понятно", "Got it")}</button>`;
   el.querySelector("button").onclick = e => { e.stopPropagation(); save("lottery.tipsSeen", load("lottery.tipsSeen", []).concat(key)); el.remove(); };
   where.prepend(el);
 }
@@ -356,18 +369,18 @@ let P = null, twins = [], mode = "random", queue = [], used = [], extraLeft = 1,
 
 function chips(eff, odds) {
   const list = (Array.isArray(eff) ? eff : Object.entries(eff || {})).map(([k, v]) => `<span class="chip ${v > 0 ? "up" : "down"}">${v > 0 ? "+" : ""}${v} ${resName[k].toLowerCase()}</span>`);
-  if (odds != null && odds < 1) list.unshift(`<span class="chip odds">шанс ${Math.round(odds * 100)}%</span>`);
+  if (odds != null && odds < 1) list.unshift(`<span class="chip odds">${tr("шанс", "chance")} ${Math.round(odds * 100)}%</span>`);
   return `<div class="chips">${list.join("")}</div>`;
 }
 function familyLine(p) {
   const bits = [];
-  if (p.partner) bits.push(`${p.married ? g(p, "жена", "муж") : "пара"}: ${p.partner.first}`);
-  else if (p.f.widowed) bits.push(g(p, "вдовец", "вдова"));
-  else if (p.f.divorced) bits.push("в разводе");
-  if (p.kids.length) bits.push(`дети: ${p.kids.map(k => k.first).join(", ")}`);
+  if (p.partner) bits.push(`${p.married ? tr(g(p, "жена", "муж"), g(p, "wife", "husband")) : tr("пара", "partner")}: ${p.partner.first}`);
+  else if (p.f.widowed) bits.push(tr(g(p, "вдовец", "вдова"), g(p, "widower", "widow")));
+  else if (p.f.divorced) bits.push(tr("в разводе", "divorced"));
+  if (p.kids.length) bits.push(`${tr("дети", "children")}: ${p.kids.map(k => k.first).join(", ")}`);
   return bits.join(" · ");
 }
-function jobLine(p) { return p.retired ? "на пенсии" : p.f.jail ? "в заключении" : p.job ? `${jobName(p).toLowerCase()}${p.jobLvl > 1 ? ", уровень " + p.jobLvl : ""}` : p.age >= 18 ? "без постоянной работы" : ""; }
+function jobLine(p) { return p.retired ? tr("на пенсии", "retired") : p.f.jail ? tr("в заключении", "in prison") : p.job ? `${jobName(p).toLowerCase()}${p.jobLvl > 1 ? tr(", уровень ", ", level ") + p.jobLvl : ""}` : p.age >= 18 ? tr("без постоянной работы", "no steady job") : ""; }
 
 // ---------- HUD: живёт всю жизнь, чтобы шкалы и возраст анимировались ----------
 const TL_MAX = 100;
@@ -383,7 +396,7 @@ function renderGame() {
       <div class="stack" id="h-dream" style="gap:2px;text-align:right;max-width:50%"></div>
     </div>
     <div class="timeline" aria-hidden="true"><div class="rail"></div><div class="lived" id="h-lived"></div>
-      <div class="avg" style="left:${Math.min(98, p.home.le / TL_MAX * 100)}%"><span>в среднем ${Math.round(p.home.le)}</span></div><div class="me" id="h-me"></div></div>
+      <div class="avg" style="left:${Math.min(98, p.home.le / TL_MAX * 100)}%"><span>${tr("в среднем", "average")} ${Math.round(p.home.le)}</span></div><div class="me" id="h-me"></div></div>
     <div class="facts" id="h-facts"></div>
     <div class="bars">${RES.map(([k, n]) => `<div class="bar" id="b-${k}"><span>${n}</span><div class="track"><div class="fill" style="width:${p.r[k]}%"></div></div><span class="n">${p.r[k]}</span></div>`).join("")}</div>
   </div>
@@ -392,8 +405,8 @@ function renderGame() {
 }
 function updateHud(changes = []) {
   const p = P;
-  document.getElementById("h-country").textContent = p.c.n + (p.f.emigrated && !p.f.returned ? " · родина: " + p.home.n : "");
-  document.getElementById("h-dream").innerHTML = p.dream ? `<span class="eyebrow">Мечта</span><span class="dream ${p.dreamDone ? "done" : ""}">${p.dreamDone ? "✓ " : ""}${p.dream.t}</span><span class="note">${p.dream.d}</span>` : "";
+  document.getElementById("h-country").textContent = p.c.name + (p.f.emigrated && !p.f.returned ? tr(" · родина: ", " · born in ") + p.home.name : "");
+  document.getElementById("h-dream").innerHTML = p.dream ? `<span class="eyebrow">${tr("Мечта", "Dream")}</span><span class="dream ${p.dreamDone ? "done" : ""}">${p.dreamDone ? "✓ " : ""}${p.dream.t}</span><span class="note">${p.dream.d}</span>` : "";
   const fam = familyLine(p), job = jobLine(p);
   document.getElementById("h-facts").innerHTML = `${job ? `<span>${job}</span>` : ""}${fam ? `<span>${esc(fam)}</span>` : ""}`;
   const pos = Math.min(100, p.age / TL_MAX * 100) + "%";
@@ -433,25 +446,25 @@ function screenStart() {
   document.body.classList.remove("dim"); setMood(null);
   const lives = load("lottery.lives", []), atlas = load("lottery.atlas", []), got = load("lottery.ach", []);
   app.innerHTML = `<section class="stack" style="gap:18px">
-    <span class="eyebrow fade">Каждую секунду рождается около 4 детей</span>
-    <h1 class="fade" style="--d:1">Лотерея <em>рождения</em></h1>
-    <p class="muted fade" style="--d:2">Ты родишься одним из них. Страна, семья, имя и характер выпадают по реальной статистике ${COUNTRIES.length} стран. Решай, чему посвятить каждые пять лет, делай выбор и попробуй исполнить мечту. Чем труднее старт, тем больше очков.</p>
+    <span class="eyebrow fade">${tr("Каждую секунду рождается около 4 детей", "About 4 babies are born every second")}</span>
+    <h1 class="fade" style="--d:1">${tr("Лотерея <em>рождения</em>", "Birth <em>Lottery</em>")}</h1>
+    <p class="muted fade" style="--d:2">${tr(`Ты родишься одним из них. Страна, семья, имя и характер выпадают по реальной статистике ${COUNTRIES.length} стран. Решай, чему посвятить каждые пять лет, делай выбор и попробуй исполнить мечту. Чем труднее старт, тем больше очков.`, `You will be one of them. Your country, family, name and character are drawn from real statistics for ${COUNTRIES.length} countries. Decide what to focus on every five years, make choices and try to make your dream come true. The harder your start, the more points you earn.`)}</p>
     <div class="row fade" style="--d:3">
-      <button id="b-random" class="big pulse">Родиться</button>
-      <button id="b-daily" class="ghost">Рождение дня · ${today().split("-").reverse().slice(0, 2).join(".")}</button>
-      ${window.Platform && Platform.desktop ? `<button id="b-quit" class="ghost">Выйти</button>` : ""}
+      <button id="b-random" class="big pulse">${tr("Родиться", "Be born")}</button>
+      <button id="b-daily" class="ghost">${tr("Рождение дня", "Daily birth")} · ${tr(today().split("-").reverse().slice(0, 2).join("."), today().slice(5).replace("-", "/"))}</button>
+      ${window.Platform && Platform.desktop ? `<button id="b-quit" class="ghost">${tr("Выйти", "Quit")}</button>` : ""}
     </div>
   </section>
   <section class="panel fade" style="--d:4">
-    <div class="row between"><span class="eyebrow">Атлас рождений</span><span class="note">${atlas.length} из ${COUNTRIES.length} стран</span></div>
-    <p class="note">${atlas.length ? atlas.slice(0, 40).map(esc).join(" · ") + (atlas.length > 40 ? " …" : "") : "Здесь появятся страны, в которых ты рождался."}</p>
+    <div class="row between"><span class="eyebrow">${tr("Атлас рождений", "Birth atlas")}</span><span class="note">${atlas.length} ${tr("из", "of")} ${COUNTRIES.length} ${tr("стран", "countries")}</span></div>
+    <p class="note">${atlas.length ? atlas.slice(0, 40).map(n => esc(countryName(n))).join(" · ") + (atlas.length > 40 ? " …" : "") : tr("Здесь появятся страны, в которых ты рождался.", "Countries you were born in will appear here.")}</p>
   </section>
   <section class="panel fade" style="--d:5">
-    <div class="row between"><span class="eyebrow">Достижения</span><span class="note">${got.length} из ${ACHIEVEMENTS.length}</span></div>
+    <div class="row between"><span class="eyebrow">${tr("Достижения", "Achievements")}</span><span class="note">${got.length} ${tr("из", "of")} ${ACHIEVEMENTS.length}</span></div>
     <div class="badges">${ACHIEVEMENTS.map(a => `<span class="badge ${got.includes(a.id) ? "on" : ""}" title="${esc(a.d)}">${a.n}</span>`).join("")}</div>
   </section>
-  ${lives.length ? `<section class="panel fade" style="--d:6"><span class="eyebrow">Прожитые жизни</span><ul class="list">${lives.slice(0, 8).map(l => `<li><span>${esc(l.name)}, ${esc(l.country)}</span><span>${years(l.age)} · ${fmt(l.score)}</span></li>`).join("")}</ul></section>` : ""}
-  <p class="note">Прототип. Данные: ООН, ВОЗ, Всемирный банк. Смерть и болезни случаются с реальной частотой, но без подробностей. Нажми на экран, чтобы ускорить анимацию.</p>`;
+  ${lives.length ? `<section class="panel fade" style="--d:6"><span class="eyebrow">${tr("Прожитые жизни", "Past lives")}</span><ul class="list">${lives.slice(0, 8).map(l => `<li><span>${esc(l.name)}, ${esc(countryName(l.country))}</span><span>${years(l.age)} · ${fmt(l.score)}</span></li>`).join("")}</ul></section>` : ""}
+  <p class="note">${tr("Данные: ООН, ВОЗ, Всемирный банк. Смерть и болезни случаются с реальной частотой, но без подробностей. Нажми на экран, чтобы ускорить анимацию.", "Data: UN, WHO, World Bank. Death and illness happen at real-world rates, but never in detail. Tap the screen to speed up animations.")}</p>`;
   document.getElementById("b-random").onclick = () => begin("random");
   document.getElementById("b-daily").onclick = () => begin("daily");
   const q = document.getElementById("b-quit"); if (q) q.onclick = () => Platform.quit();
@@ -471,21 +484,21 @@ async function begin(m) {
 // рулетка: страны мелькают с частотой реальных рождений и замедляются на твоей
 async function roulette(p) {
   skipping = false;
-  overlay.innerHTML = `<div class="roulette"><span class="eyebrow">Рождение</span><div class="slot" id="slot">…</div><div class="odds" id="odds">&nbsp;</div><div class="counter" id="cnt">&nbsp;</div></div>`;
+  overlay.innerHTML = `<div class="roulette"><span class="eyebrow">${tr("Рождение", "Birth")}</span><div class="slot" id="slot">…</div><div class="odds" id="odds">&nbsp;</div><div class="counter" id="cnt">&nbsp;</div></div>`;
   overlay.classList.add("show");
   Sound.ensure();
   const slot = document.getElementById("slot"), cnt = document.getElementById("cnt");
   const steps = 28;
   for (let i = 0; i < steps; i++) {
     const c = weighted(COUNTRIES, x => x.b);
-    slot.textContent = c.n; Sound.tick();
-    cnt.textContent = `рождений в мире за это время: ${fmt(Math.round((i + 1) * 4.3))}`;
+    slot.textContent = c.name; Sound.tick();
+    cnt.textContent = tr(`рождений в мире за это время: `, `births worldwide meanwhile: `) + fmt(Math.round((i + 1) * 4.3));
     await sleep(35 + Math.pow(i / steps, 3) * 320);
     if (skipping) break;
   }
-  slot.textContent = p.c.n; slot.classList.add("final");
+  slot.textContent = p.c.name; slot.classList.add("final");
   Sound.chime(); window.Field && Field.burst();
-  await tween(1, p.c.odds, 900, v => document.getElementById("odds").textContent = "шанс 1 из " + fmt(Math.round(v)));
+  await tween(1, p.c.odds, 900, v => document.getElementById("odds").textContent = tr("шанс 1 из ", "odds 1 in ") + fmt(Math.round(v)));
   if (p.c.odds >= 500) burst({ particleCount: 60 });
   skipping = false;
   await sleep(1200);
@@ -503,33 +516,33 @@ async function screenBirth() {
   skipping = false;
   setMood(p);
   app.innerHTML = `<section class="stack">
-    <span class="eyebrow fade">${mode === "daily" ? "Рождение дня" : "Только что"} · ${g(p, "мальчик", "девочка")}</span>
+    <span class="eyebrow fade">${mode === "daily" ? tr("Рождение дня", "Daily birth") : tr("Только что", "Just now")} · ${tr(g(p, "мальчик", "девочка"), g(p, "boy", "girl"))}</span>
     <h1 id="b-name">&nbsp;</h1>
-    <p class="muted fade" style="--d:2">${c.n}, ${c.part}. Шанс родиться здесь: 1 из ${fmt(c.odds)}. Семья ${QUINTILE[p.q]} по меркам страны.</p>
+    <p class="muted fade" style="--d:2">${c.name}, ${c.partName}. ${tr(`Шанс родиться здесь: 1 из ${fmt(c.odds)}. Семья ${QUINTILE[p.q]} по меркам страны.`, `Odds of being born here: 1 in ${fmt(c.odds)}. A ${QUINTILE[p.q]} family by local standards.`)}</p>
   </section>
   <section class="panel fade" style="--d:4">
-    <span class="eyebrow">Семья</span>
+    <span class="eyebrow">${tr("Семья", "Family")}</span>
     <ul class="list">
-      <li><span>Отец</span><span>${esc(p.parents.father)}</span></li>
-      <li><span>Мать</span><span>${esc(p.parents.mother)}</span></li>
-      <li><span>Братья и сёстры</span><span>${p.siblings || "нет"}</span></li>
+      <li><span>${tr("Отец", "Father")}</span><span>${esc(p.parents.father)}</span></li>
+      <li><span>${tr("Мать", "Mother")}</span><span>${esc(p.parents.mother)}</span></li>
+      <li><span>${tr("Братья и сёстры", "Siblings")}</span><span>${p.siblings || tr("нет", "none")}</span></li>
     </ul>
-    <span class="eyebrow">Характер</span>
+    <span class="eyebrow">${tr("Характер", "Character")}</span>
     <div class="stack" style="gap:6px">${p.traits.map(t => `<p><b>${TRAITS[t].n}.</b> <span class="muted">${TRAITS[t].d}</span></p>`).join("")}</div>
   </section>
   <section class="panel fade" style="--d:6"><div class="stats">
-    <div class="stat"><span class="eyebrow">Живут в среднем</span><span class="v">${c.le.toFixed(1)}</span></div>
-    <div class="stat"><span class="eyebrow">Не доживают до 5</span><span class="v">${(c.u5 * 100).toFixed(1)}%</span></div>
-    <div class="stat"><span class="eyebrow">Доход на человека</span><span class="v">$${fmt(c.g)}</span></div>
-    <div class="stat"><span class="eyebrow">Множитель очков</span><span class="v">×${difficulty(p).toFixed(2)}</span></div>
+    <div class="stat"><span class="eyebrow">${tr("Живут в среднем", "Life expectancy")}</span><span class="v">${c.le.toFixed(1)}</span></div>
+    <div class="stat"><span class="eyebrow">${tr("Не доживают до 5", "Die before 5")}</span><span class="v">${(c.u5 * 100).toFixed(1)}%</span></div>
+    <div class="stat"><span class="eyebrow">${tr("Доход на человека", "Income per person")}</span><span class="v">$${fmt(c.g)}</span></div>
+    <div class="stat"><span class="eyebrow">${tr("Множитель очков", "Score multiplier")}</span><span class="v">×${difficulty(p).toFixed(2)}</span></div>
   </div></section>
-  <section class="panel fade" style="--d:8"><span class="eyebrow">Родились в ту же секунду</span>
-    <ul class="list">${twins.map(t => `<li><span>${esc(fullName(t))}</span><span>${t.c.n}</span></li>`).join("")}</ul>
+  <section class="panel fade" style="--d:8"><span class="eyebrow">${tr("Родились в ту же секунду", "Born in the same second")}</span>
+    <ul class="list">${twins.map(t => `<li><span>${esc(fullName(t))}</span><span>${t.c.name}</span></li>`).join("")}</ul>
   </section>
-  <div class="row fade" style="--d:10"><button id="go" class="big pulse">Начать жизнь</button></div>`;
+  <div class="row fade" style="--d:10"><button id="go" class="big pulse">${tr("Начать жизнь", "Start life")}</button></div>`;
   scrollTo(0, 0);
   document.getElementById("go").onclick = () => { renderGame(); finishStage(); };
-  tip("birth", "Как устроена игра", "Страна, семья и характер выпали по реальной статистике. Ты проживёшь жизнь этапами по пять лет. Чем труднее старт, тем выше множитель очков.", app.querySelector(".panel"));
+  tip("birth", tr("Как устроена игра", "How it works"), tr("Страна, семья и характер выпали по реальной статистике. Ты проживёшь жизнь этапами по пять лет. Чем труднее старт, тем выше множитель очков.", "Your country, family and character were drawn from real statistics. You'll live your life in five-year stages. The harder your start, the higher your score multiplier."), app.querySelector(".panel"));
   await typeInto(document.getElementById("b-name"), fullName(p));
 }
 
@@ -542,15 +555,15 @@ function nextStage() {
 
 function screenDream() {
   const opts = dreamChoices(P);
-  stage().innerHTML = `<span class="eyebrow enter">Пауза · 15 лет</span><h2 class="enter" style="--i:1">О чём ты мечтаешь?</h2>
-  <p class="muted enter" style="--i:2">Если мечта сбудется, она даст 600 очков, умноженных на трудность старта.</p>
+  stage().innerHTML = `<span class="eyebrow enter">${tr("Пауза · 15 лет", "Pause · age 15")}</span><h2 class="enter" style="--i:1">${tr("О чём ты мечтаешь?", "What do you dream of?")}</h2>
+  <p class="muted enter" style="--i:2">${tr("Если мечта сбудется, она даст 600 очков, умноженных на трудность старта.", "If your dream comes true, it's worth 600 points times your starting difficulty.")}</p>
   ${opts.map((d, i) => `<button class="option enter" style="--i:${i + 3}" data-i="${i}"><b>${d.t}</b><span class="note">${d.d}</span></button>`).join("")}`;
   Sound.pop();
-  tip("dream", "Мечта", "Выбери одну цель на всю жизнь. Её видно в правом верхнем углу. Мечты, которые труднее исполнить в твоей стране, ценнее.", stage());
+  tip("dream", tr("Мечта", "Dream"), tr("Выбери одну цель на всю жизнь. Её видно в правом верхнем углу. Мечта приносит очки, только если сбудется.", "Pick one goal for your whole life. You'll see it in the top right corner. A dream only scores if it comes true."), stage());
   stage().querySelectorAll(".option").forEach(b => b.onclick = async () => {
     P.dream = opts[+b.dataset.i];
     stage().querySelectorAll(".option").forEach(o => o.classList.add(o === b ? "chosen" : "dimmed"));
-    Sound.good(); updateHud(); toast("Мечта выбрана", P.dream.t);
+    Sound.good(); updateHud(); toast(tr("Мечта выбрана", "Dream chosen"), P.dream.t);
     await sleep(700);
     screenFocus();
   });
@@ -559,11 +572,11 @@ function screenDream() {
 const FOCUS_ICON = { study: "📚", work: "🛠️", people: "🤝", health: "🫀", rest: "🌿" };
 function screenFocus() {
   const opts = FOCUS.filter(f => !f.min || P.age >= f.min);
-  stage().innerHTML = `<span class="eyebrow enter">${P.age}–${P.age + 4}</span><h2 class="enter" style="--i:1">Чему посвятить эти пять лет?</h2>
-  <p class="muted enter" style="--i:2">Фокус даёт прибавку и повышает шансы в решениях того же типа.</p>
+  stage().innerHTML = `<span class="eyebrow enter">${P.age}–${P.age + 4}</span><h2 class="enter" style="--i:1">${tr("Чему посвятить эти пять лет?", "What will you focus on for these five years?")}</h2>
+  <p class="muted enter" style="--i:2">${tr("Фокус даёт прибавку и повышает шансы в решениях того же типа.", "Your focus gives a bonus and raises your odds in matching decisions.")}</p>
   <div class="focus-grid">${opts.map((f, i) => `<button class="option enter" style="--i:${i + 3}" data-id="${f.id}"><span class="ico" aria-hidden="true">${FOCUS_ICON[f.id]}</span><b>${f.n}</b><span class="note">${f.d}</span></button>`).join("")}</div>`;
   Sound.pop();
-  tip("focus", "Фокус", "С 10 лет ты сам решаешь, на что тратить время. Шкалы сверху: здоровье, деньги, знания, близкие и счастье. Если здоровье упадёт до нуля, жизнь может оборваться раньше.", stage());
+  tip("focus", tr("Фокус", "Focus"), tr("С 10 лет ты сам решаешь, на что тратить время. Шкалы сверху: здоровье, деньги, знания, близкие и счастье. Если здоровье упадёт до нуля, жизнь может оборваться раньше.", "From age 10 you decide how to spend your time. The bars at the top are health, money, knowledge, loved ones and happiness. If health drops too low, life can end early."), stage());
   stage().querySelectorAll(".option").forEach(b => b.onclick = async () => {
     P.focus = b.dataset.id;
     stage().querySelectorAll(".option").forEach(o => o.classList.add(o === b ? "chosen" : "dimmed"));
@@ -583,7 +596,7 @@ function playCard() {
   stage().innerHTML = `<span class="eyebrow enter">${card.t}</span><h2 class="enter" style="--i:1">${esc(txt(card.q, P))}</h2>
   ${opts.map((o, i) => `<button class="option enter" style="--i:${i + 2}" data-i="${i}"><b>${esc(o.l)}</b>${chips(o.yes, chanceOf(P, o))}</button>`).join("")}`;
   Sound.pop();
-  if (opts.some(o => chanceOf(P, o) < 1)) tip("chance", "Шансы", "Процент рядом с вариантом показывает шанс на успех. Он зависит от страны, семьи, характера и твоих шкал. Зелёные цифры ты получишь при успехе.", stage());
+  if (opts.some(o => chanceOf(P, o) < 1)) tip("chance", tr("Шансы", "Odds"), tr("Процент рядом с вариантом показывает шанс на успех. Он зависит от страны, семьи, характера и твоих шкал. Зелёные цифры ты получишь при успехе.", "The percentage next to an option is your chance of success. It depends on your country, family, character and bars. The green numbers are what you get if it works."), stage());
   stage().querySelectorAll(".option").forEach(b => b.onclick = () => choose(card, opts[+b.dataset.i], b));
 }
 
@@ -608,13 +621,13 @@ async function choose(card, opt, btn) {
   }
   btn.classList.add(res.ok ? "win" : "lose");
   const out = document.createElement("div");
-  out.innerHTML = `${chance < 1 ? `<span class="stamp ${res.ok ? "ok" : "no"}">${res.ok ? (chance < .4 ? "ПОВЕЗЛО!" : "ПОЛУЧИЛОСЬ") : "НЕ ВЫШЛО"}</span>` : ""}
+  out.innerHTML = `${chance < 1 ? `<span class="stamp ${res.ok ? "ok" : "no"}">${res.ok ? (chance < .4 ? tr("ПОВЕЗЛО!", "LUCKY!") : tr("ПОЛУЧИЛОСЬ", "SUCCESS")) : tr("НЕ ВЫШЛО", "NO LUCK")}</span>` : ""}
     ${res.text ? `<span class="result-text">${esc(res.text)}</span>` : ""}${res.changes.length ? chips(res.changes) : ""}`;
   out.className = "stack"; out.style.gap = "6px";
   btn.appendChild(out);
   updateHud(res.changes);
   if (chance >= 1) Sound.pop(); else if (res.ok) { chance < .4 ? Sound.great() : Sound.good(); if (chance < .4) burst({ particleCount: 70 }); buzz("success"); } else { Sound.bad(); buzz("fail"); }
-  const hint = document.createElement("p"); hint.className = "hint"; hint.textContent = "Нажми, чтобы продолжить";
+  const hint = document.createElement("p"); hint.className = "hint"; hint.textContent = tr("Нажми, чтобы продолжить", "Tap to continue");
   stage().appendChild(hint);
   skipping = false;
   await sleep(chance < 1 ? 2200 : 1300);
@@ -623,12 +636,13 @@ async function choose(card, opt, btn) {
   playCard();
 }
 
+const DREAM_RE = /Мечта сбылась|Dream come true/;
 function iconFor(cls, s) {
-  if (/Мечта сбылась/.test(s)) return ["star", "★"];
-  if (/Переезд|Поездка|Возвращение/.test(s)) return [cls, "✈"];
-  if (/Родил|появил|внук/i.test(s)) return [cls, "✿"];
-  if (/вместе|Свадьба|рядом/.test(s)) return [cls, "♥"];
-  if (/Умер|Умерла|Не стало/.test(s)) return [cls, "·"];
+  if (DREAM_RE.test(s)) return ["star", "★"];
+  if (/Переезд|Поездка|Возвращение|Moved to|Went to|Back home/.test(s)) return [cls, "✈"];
+  if (/Родил|появил|внук|is born|joins the family|grandchild/i.test(s)) return [cls, "✿"];
+  if (/вместе|Свадьба|рядом|together now|by your side/.test(s)) return [cls, "♥"];
+  if (/Умер|Умерла|Не стало|died|passed away/.test(s)) return [cls, "·"];
   return [cls, cls === "up" ? "▲" : "▼"];
 }
 
@@ -638,19 +652,19 @@ async function finishStage() {
   const before = { ...P.r };
   liveStage(P);
   const to = P.alive ? P.age : P.age;
-  stage().innerHTML = `<span class="eyebrow">${from}–${P.alive ? P.age - 1 : P.age}</span><h2>${P.alive ? "Проходят годы…" : "Последние годы"}</h2>`;
+  stage().innerHTML = `<span class="eyebrow">${from}–${P.alive ? P.age - 1 : P.age}</span><h2>${P.alive ? tr("Проходят годы…", "The years go by…") : tr("Последние годы", "The final years")}</h2>`;
   await tickAge(from, to);
   const changes = RES.map(([k]) => [k, P.r[k] - before[k]]).filter(([, v]) => v);
   updateHud(changes);
   const items = P.log.slice(logStart);
   stage().innerHTML = `<div class="panel"><span class="eyebrow">${from}–${P.alive ? P.age - 1 : P.age}</span>
-    <ul class="log">${items.length ? items.map(([c, s], i) => { const [cl, ic] = iconFor(c, s); return `<li class="${cl} pop" style="--i:${i}"><span class="ic">${ic}</span><span>${esc(s)}</span></li>`; }).join("") : `<li class="pop"><span class="ic">·</span><span>Обычные годы, без больших перемен.</span></li>`}</ul></div>`;
-  items.forEach(([c, s], i) => setTimeout(() => { if (/Мечта сбылась/.test(s)) { Sound.great(); burst({ particleCount: 140, spread: 100 }); toast("Мечта сбылась!", P.dream.t); } else c === "down" ? Sound.tone(260, .12, "triangle", .04) : Sound.tone(660, .1, "triangle", .04); }, REDUCE ? 0 : i * 380));
+    <ul class="log">${items.length ? items.map(([c, s], i) => { const [cl, ic] = iconFor(c, s); return `<li class="${cl} pop" style="--i:${i}"><span class="ic">${ic}</span><span>${esc(s)}</span></li>`; }).join("") : `<li class="pop"><span class="ic">·</span><span>${tr("Обычные годы, без больших перемен.", "Ordinary years, nothing big changed.")}</span></li>`}</ul></div>`;
+  items.forEach(([c, s], i) => setTimeout(() => { if (DREAM_RE.test(s)) { Sound.great(); burst({ particleCount: 140, spread: 100 }); toast(tr("Мечта сбылась!", "Dream come true!"), P.dream.t); } else c === "down" ? Sound.tone(260, .12, "triangle", .04) : Sound.tone(660, .1, "triangle", .04); }, REDUCE ? 0 : i * 380));
   achievementToasts();
   await sleep(items.length * 380 + 300);
   if (!P.alive) { await sleep(900); return farewell(); }
   const btn = document.createElement("div"); btn.className = "row enter";
-  btn.innerHTML = `<button id="go" class="big">Дальше</button>`;
+  btn.innerHTML = `<button id="go" class="big">${tr("Дальше", "Continue")}</button>`;
   stage().appendChild(btn);
   document.getElementById("go").onclick = () => nextStage();
 }
@@ -661,7 +675,7 @@ function achievementToasts() {
     if (got.includes(id) || toasted.has(id)) continue;
     toasted.add(id);
     const a = ACHIEVEMENTS.find(x => x.id === id);
-    toast("Новое достижение: " + a.n, a.d); Sound.good();
+    toast(tr("Новое достижение: ", "New achievement: ") + a.n, a.d); Sound.good();
   }
 }
 
@@ -697,26 +711,27 @@ async function screenEnd() {
   lives.unshift({ name: fullName(p), country: p.home.n, age: p.age, score: s, date: today() });
   save("lottery.lives", lives.slice(0, 50));
   const child = p.age < 5;
-  const share = `Лотерея рождения${mode === "daily" ? " · рождение дня " + today() : ""}: ${fullName(p)}, ${p.home.n}, ${years(p.age)}${p.dream ? (p.dreamDone ? ", мечта сбылась" : ", мечта не сбылась") : ""} · ${fmt(s)} очков`;
+  const share = tr(`Лотерея рождения${mode === "daily" ? " · рождение дня " + today() : ""}: ${fullName(p)}, ${p.home.name}, ${years(p.age)}${p.dream ? (p.dreamDone ? ", мечта сбылась" : ", мечта не сбылась") : ""} · ${fmt(s)} очков`,
+    `Birth Lottery${mode === "daily" ? " · daily birth " + today() : ""}: ${fullName(p)}, ${p.home.name}, ${years(p.age)}${p.dream ? (p.dreamDone ? ", dream came true" : ", dream didn't come true") : ""} · ${fmt(s)} points`);
   const all = [{ t: p, me: true }, ...twins.map(t => ({ t }))];
   app.innerHTML = `<section class="stack">
-    <span class="eyebrow fade">${p.home.n}${p.f.emigrated && !p.f.returned ? " → " + p.c.n : ""}</span>
+    <span class="eyebrow fade">${p.home.name}${p.f.emigrated && !p.f.returned ? " → " + p.c.name : ""}</span>
     <h1 class="fade" style="--d:1">${esc(fullName(p))}</h1>
     <p class="age fade" style="--d:2">${years(p.age)}</p>
-    <p class="muted fade" style="--d:3">Причина: ${p.cause}. ${child ? `Так случается с ${(p.home.u5 * 100).toFixed(1)} из 100 детей, родившихся в этой стране.` : `В среднем здесь живут ${p.c.le.toFixed(0)} лет.`}
-    ${p.dream ? (p.dreamDone ? ` Мечта сбылась: ${p.dream.t.toLowerCase()}.` : ` Мечта не сбылась: ${p.dream.t.toLowerCase()}.`) : ""}</p>
+    <p class="muted fade" style="--d:3">${tr(`Причина: ${p.cause}.`, `Cause: ${p.cause}.`)} ${child ? tr(`Так случается с ${(p.home.u5 * 100).toFixed(1)} из 100 детей, родившихся в этой стране.`, `This happens to ${(p.home.u5 * 100).toFixed(1)} of every 100 children born in this country.`) : tr(`В среднем здесь живут ${p.c.le.toFixed(0)} лет.`, `Average life expectancy here is ${p.c.le.toFixed(0)}.`)}
+    ${p.dream ? (p.dreamDone ? tr(` Мечта сбылась: `, ` Dream came true: `) : tr(` Мечта не сбылась: `, ` Dream didn't come true: `)) + p.dream.t.toLowerCase() + "." : ""}</p>
   </section>
   <section class="panel fade" style="--d:4"><div class="row between">
-    <div class="stack" style="gap:2px"><span class="eyebrow">Очки</span><span class="score" id="score">0</span></div>
-    <span class="note">(${p.age} × 10${p.dreamDone ? " + 600" : ""}) × ${difficulty(p).toFixed(2)}${s > best && lives.length > 1 ? " · новый рекорд!" : ""}</span></div>
-    <div class="facts">${p.job ? `<span>${jobName(p)}</span>` : ""}${p.kids.length ? `<span>${plural(p.kids.length, "ребёнок", "ребёнка", "детей")}</span>` : ""}${p.f.trips ? `<span>путешествий: ${p.f.trips}</span>` : ""}</div>
+    <div class="stack" style="gap:2px"><span class="eyebrow">${tr("Очки", "Score")}</span><span class="score" id="score">0</span></div>
+    <span class="note">(${p.age} × 10${p.dreamDone ? " + 600" : ""}) × ${difficulty(p).toFixed(2)}${s > best && lives.length > 1 ? tr(" · новый рекорд!", " · new record!") : ""}</span></div>
+    <div class="facts">${p.job ? `<span>${jobName(p)}</span>` : ""}${p.kids.length ? `<span>${tr(plural(p.kids.length, "ребёнок", "ребёнка", "детей"), p.kids.length + (p.kids.length === 1 ? " child" : " children"))}</span>` : ""}${p.f.trips ? `<span>${tr("путешествий", "trips")}: ${p.f.trips}</span>` : ""}</div>
   </section>
-  <section class="panel fade" style="--d:5"><span class="eyebrow">Родившиеся в ту же секунду</span>
-    <div class="race">${all.map(({ t, me }) => `<div class="lane ${me ? "me" : ""}"><div class="top"><span>${esc(fullName(t))}${me ? " (ты)" : ""}, ${t.home.n}${t.f.emigrated && !t.f.returned ? " → " + t.c.n : ""}</span><span>${years(t.age)}${t.dreamDone ? " · мечта ✓" : ""}</span></div><div class="track"><div class="run" data-w="${Math.min(100, t.age / 105 * 100)}"></div></div></div>`).join("")}</div>
+  <section class="panel fade" style="--d:5"><span class="eyebrow">${tr("Родившиеся в ту же секунду", "Born in the same second")}</span>
+    <div class="race">${all.map(({ t, me }) => `<div class="lane ${me ? "me" : ""}"><div class="top"><span>${esc(fullName(t))}${me ? tr(" (ты)", " (you)") : ""}, ${t.home.name}${t.f.emigrated && !t.f.returned ? " → " + t.c.name : ""}</span><span>${years(t.age)}${t.dreamDone ? tr(" · мечта ✓", " · dream ✓") : ""}</span></div><div class="track"><div class="run" data-w="${Math.min(100, t.age / 105 * 100)}"></div></div></div>`).join("")}</div>
   </section>
-  ${now.length ? `<section class="panel fade" style="--d:6"><span class="eyebrow">Достижения этой жизни</span><div class="badges">${now.map((id, i) => { const a = ACHIEVEMENTS.find(x => x.id === id); return `<span class="badge ${fresh.includes(id) ? "new" : "on"}" style="--i:${i}" title="${esc(a.d)}">${a.n}${fresh.includes(id) ? " · новое" : ""}</span>`; }).join("")}</div></section>` : ""}
-  ${p.log.length ? `<section class="panel fade" style="--d:7"><span class="eyebrow">Биография</span><ul class="log">${p.log.map(([c, s, a]) => { const [cl, ic] = iconFor(c, s); return `<li class="${cl}"><span class="ic">${ic}</span><span><span class="y">${a}</span>${esc(s)}</span></li>`; }).join("")}</ul></section>` : ""}
-  <div class="row fade" style="--d:8"><button id="again" class="big pulse">Родиться снова</button><button id="copy" class="ghost">Скопировать результат</button><button id="home" class="ghost">В начало</button></div>
+  ${now.length ? `<section class="panel fade" style="--d:6"><span class="eyebrow">${tr("Достижения этой жизни", "Achievements this life")}</span><div class="badges">${now.map((id, i) => { const a = ACHIEVEMENTS.find(x => x.id === id); return `<span class="badge ${fresh.includes(id) ? "new" : "on"}" style="--i:${i}" title="${esc(a.d)}">${a.n}${fresh.includes(id) ? tr(" · новое", " · new") : ""}</span>`; }).join("")}</div></section>` : ""}
+  ${p.log.length ? `<section class="panel fade" style="--d:7"><span class="eyebrow">${tr("Биография", "Life story")}</span><ul class="log">${p.log.map(([c, s, a]) => { const [cl, ic] = iconFor(c, s); return `<li class="${cl}"><span class="ic">${ic}</span><span><span class="y">${a}</span>${esc(s)}</span></li>`; }).join("")}</ul></section>` : ""}
+  <div class="row fade" style="--d:8"><button id="again" class="big pulse">${tr("Родиться снова", "Be born again")}</button><button id="copy" class="ghost">${tr("Скопировать результат", "Copy result")}</button><button id="home" class="ghost">${tr("В начало", "Home")}</button></div>
   <p class="note" id="share">${esc(share)}</p>`;
   document.body.classList.remove("dim");
   window.Field && Field.restore();
@@ -726,7 +741,7 @@ async function screenEnd() {
   document.getElementById("copy").onclick = () => {
     const btn = document.getElementById("copy");
     if (!navigator.clipboard) return selectShare();
-    navigator.clipboard.writeText(share).then(() => btn.textContent = "Скопировано", selectShare);
+    navigator.clipboard.writeText(share).then(() => btn.textContent = tr("Скопировано", "Copied"), selectShare);
   };
   await sleep(500);
   requestAnimationFrame(() => document.querySelectorAll(".run").forEach(r => r.style.width = r.dataset.w + "%"));
