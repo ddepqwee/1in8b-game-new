@@ -164,7 +164,9 @@ function chanceOf(p, opt) {
   }
   return clamp(base + bonus, .03, .97);
 }
+const softMode = () => !!(window.SETTINGS && window.SETTINGS.soft);
 function eligible(p, card) {
+  if (card.heavy && softMode()) return false;
   if (p.age < card.from || p.age > card.to) return false;
   if (card.if && !card.if(p)) return false;
   const seen = p.seen[card.id];
@@ -223,7 +225,7 @@ function deathCause(p, x) {
   if (p.f.ill) return "болезнь, с которой не удалось справиться";
   const d = p.c.d;
   if (x < 5) return weighted(["инфекция", "осложнения после рождения", "недоедание и болезнь"], c => c === "недоедание и болезнь" ? 1 - d : 1);
-  if (x < 40) return weighted(["несчастный случай", "инфекционная болезнь", "авария на дороге", "насилие"], c => c === "инфекционная болезнь" ? 1.5 - d : c === "насилие" ? .4 : 1);
+  if (x < 40) return weighted(["несчастный случай", "инфекционная болезнь", "авария на дороге", "насилие"], c => c === "инфекционная болезнь" ? 1.5 - d : c === "насилие" ? (softMode() ? 0 : .4) : 1);
   if (x < 70) return weighted(["болезнь сердца", "инсульт", "рак", "инфекционная болезнь"], c => c === "инфекционная болезнь" ? 1 - d : 1);
   return weighted(["болезнь сердца", "инсульт", "рак", "старость, во сне"], c => c === "старость, во сне" ? (x >= 85 ? 2 : .5) : 1);
 }
@@ -236,7 +238,7 @@ function liveStage(p) {
 
   const nEvents = rng() < .3 ? 2 : 1;
   for (let i = 0; i < nEvents; i++) {
-    const ev = weighted(window.EVENTS, x => x.w(p));
+    const ev = weighted(window.EVENTS, x => x.heavy && softMode() ? 0 : x.w(p));
     if (!ev.s) continue;
     const text = txt(ev.s, p);
     const changes = apply(p, ev.e);

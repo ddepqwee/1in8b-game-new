@@ -32,7 +32,7 @@
 • Выбери мечту в 15 лет и попробуй её исполнить.
 • Сравни свою жизнь с четырьмя детьми, родившимися в ту же секунду.
 • Чем труднее старт, тем больше очков: родившийся в бедной стране может обойти родившегося в богатой.
-• Собирай атлас стран и 19 достижений, проходи «Рождение дня» вместе с друзьями.
+• Собирай атлас стран и 22 достижения, проходи «Рождение дня» вместе с друзьями.
 
 Смерть, болезни и конфликты случаются с реальной частотой, но показаны без подробностей. Без рекламы, без регистрации, без сбора данных.
 
@@ -48,7 +48,7 @@ Your country, family, name and character are drawn from real UN, WHO and World B
 • Pick a dream at 15 and try to make it come true.
 • Compare your life with four others born in the very same second.
 • The harder your start, the more points you earn.
-• Collect a world atlas and 19 achievements, and play the Daily Birth with friends.
+• Collect a world atlas and 22 achievements, and play the Daily Birth with friends.
 
 Death, illness and conflict happen at real-world rates but are never shown in detail. No ads, no sign-up, no data collection.
 

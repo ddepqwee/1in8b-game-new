@@ -175,7 +175,24 @@ button.big { font-size: 18px; padding: 16px 26px; }
 .toast small { display: block; font-weight: 500; opacity: .8; }
 @keyframes toast { 0% { opacity: 0; transform: translateY(-16px) scale(.95); } 10%, 85% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-10px); } }
 
-#sound { position: fixed; z-index: 25; top: calc(env(safe-area-inset-top, 0px) + 10px); right: calc(max(16px, env(safe-area-inset-right, 0px))); padding: 8px 12px; font-size: 13px; }
+#gear { position: fixed; z-index: 25; top: calc(env(safe-area-inset-top, 0px) + 10px); right: calc(max(16px, env(safe-area-inset-right, 0px))); width: 40px; height: 40px; padding: 0; font-size: 20px; line-height: 1; border-radius: 50%; background: rgba(15,20,36,.7); }
+#settings { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 24px 16px; background: rgba(15,20,36,.97); opacity: 0; pointer-events: none; transition: opacity .3s ease; }
+#settings.show { opacity: 1; pointer-events: auto; }
+#settings .panel { width: min(100%, 440px); max-height: 100%; overflow-y: auto; }
+.setting { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+.setting:last-of-type { border-bottom: 0; }
+.setting .note { display: block; }
+.switch { flex: none; width: 46px; height: 26px; padding: 0; border-radius: 99px; background: #252e4b; border: 1px solid var(--line); position: relative; box-shadow: none; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--muted); transition: transform .2s ease, background .2s ease; }
+.switch[aria-checked="true"] { background: #1f3b31; border-color: var(--good); }
+.switch[aria-checked="true"]::after { transform: translateX(20px); background: var(--good); }
+button.danger { background: transparent; color: var(--bad); border: 1px solid var(--bad); box-shadow: none; }
+.tip { display: grid; gap: 8px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--life); background: rgba(242,180,90,.08); font-size: 14px; animation: in .4s ease both; }
+.tip .eyebrow { color: var(--life); }
+.tip button { justify-self: start; padding: 6px 12px; font-size: 13px; }
+.keys { display: none; }
+@media (hover: hover) and (pointer: fine) { .keys { display: inline; } }
+kbd { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); }
 
 @media (min-width: 1100px) and (min-height: 760px) { main { zoom: 1.2; } }
 @media (min-width: 1600px) and (min-height: 1000px) { main { zoom: 1.4; } }
@@ -186,7 +203,8 @@ button.big { font-size: 18px; padding: 16px 26px; }
 
 <div id="mood"></div>
 <canvas id="field" aria-hidden="true"></canvas>
-<button id="sound" class="ghost" aria-pressed="true">Звук: вкл</button>
+<button id="gear" class="ghost" aria-haspopup="dialog" aria-label="Настройки" title="Настройки">⚙</button>
+<div id="settings" role="dialog" aria-modal="true" aria-label="Настройки"></div>
 <main id="app" aria-live="polite"></main>
 <div id="overlay" aria-live="assertive"></div>
 <div id="toasts" aria-live="polite"></div>
@@ -196,6 +214,7 @@ button.big { font-size: 18px; padding: 16px 26px; }
 <script src="data/countries.js"></script>
 <script src="data/names.js"></script>
 <script src="data/content.js"></script>
+<script src="data/content-world.js"></script>
 <script src="engine.js"></script>
 <script>
 // ---------- Утилиты ----------
@@ -210,15 +229,21 @@ function save(key, val) { const s = JSON.stringify(val); try { localStorage.setI
 function load(key, def) { try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch (e) { return def; } }
 const today = () => new Date().toISOString().slice(0, 10);
 
+// ---------- Настройки ----------
+window.SETTINGS = Object.assign({ fast: false, soft: false, tips: true }, load("lottery.settings", {}));
+const saveSettings = () => save("lottery.settings", SETTINGS);
+const speed = ms => SETTINGS.fast ? ms * .45 : ms;
+
 // паузы, которые можно пропустить касанием
 let skipping = false;
 document.addEventListener("pointerdown", () => { skipping = true; });
 function sleep(ms) {
-  if (REDUCE) ms = Math.min(ms, 60);
+  ms = REDUCE ? Math.min(ms, 60) : speed(ms);
   return new Promise(res => { const t0 = performance.now(); (function check() { if (skipping || performance.now() - t0 >= ms) res(); else requestAnimationFrame(check); })(); });
 }
 function tween(from, to, ms, onStep, ease = t => 1 - Math.pow(1 - t, 3)) {
   if (REDUCE) { onStep(to); return Promise.resolve(); }
+  ms = speed(ms);
   return new Promise(res => { const t0 = performance.now(); (function f(now) { const t = Math.min(1, (now - t0) / ms); onStep(from + (to - from) * ease(t)); if (t < 1) requestAnimationFrame(f); else res(); })(t0); });
 }
 function burst(opts = {}) {
@@ -258,10 +283,73 @@ const Sound = {
   chime() { [392, 523, 659, 784].forEach((f, i) => this.tone(f, 1.2, "sine", .05, i * .12)); },
   death() { [330, 262, 196].forEach((f, i) => this.tone(f, 1.6, "sine", .05, i * .45)); },
 };
-const soundBtn = document.getElementById("sound");
-function paintSound() { soundBtn.textContent = Sound.on ? "Звук: вкл" : "Звук: выкл"; soundBtn.setAttribute("aria-pressed", Sound.on); }
-soundBtn.onclick = () => { Sound.on = !Sound.on; save("lottery.sound", Sound.on); paintSound(); if (Sound.on) Sound.pop(); };
-paintSound();
+const settingsBox = document.getElementById("settings");
+const SETTING_ROWS = [
+  ["sound", "Звук", "Короткие сигналы при выборе и бросках"],
+  ["fast", "Быстрые анимации", "Всё то же, но в два раза быстрее"],
+  ["soft", "Мягкий режим", "Без войн, преступлений, насилия и аварий"],
+  ["tips", "Подсказки", "Объяснения правил в первых жизнях"],
+];
+const getSetting = k => k === "sound" ? Sound.on : SETTINGS[k];
+function setSetting(k, v) {
+  if (k === "sound") { Sound.on = v; save("lottery.sound", v); if (v) Sound.pop(); }
+  else { SETTINGS[k] = v; if (k === "tips" && v) save("lottery.tipsSeen", []); saveSettings(); }
+}
+function openSettings() {
+  let armed = false;
+  settingsBox.innerHTML = `<section class="panel stack" style="gap:6px">
+    <div class="row between"><h2 style="margin:0">Настройки</h2><button id="s-close" class="ghost" aria-label="Закрыть">Готово</button></div>
+    ${SETTING_ROWS.map(([k, n, d]) => `<div class="setting"><span><b>${n}</b><span class="note">${d}</span></span>
+      <button class="switch" role="switch" data-k="${k}" aria-checked="${!!getSetting(k)}" aria-label="${n}"></button></div>`).join("")}
+    <div class="setting"><span><b>Сбросить прогресс</b><span class="note" id="s-reset-note">Атлас, достижения и прожитые жизни</span></span>
+      <button id="s-reset" class="danger">Сбросить</button></div>
+    <p class="note keys">Клавиши: <kbd>1</kbd>–<kbd>5</kbd> выбор, <kbd>Enter</kbd> или <kbd>Пробел</kbd> дальше, <kbd>Esc</kbd> настройки.</p>
+  </section>`;
+  settingsBox.querySelectorAll(".switch").forEach(b => b.onclick = () => { const v = b.getAttribute("aria-checked") !== "true"; b.setAttribute("aria-checked", v); setSetting(b.dataset.k, v); });
+  const reset = document.getElementById("s-reset");
+  reset.onclick = () => {
+    if (!armed) { armed = true; reset.textContent = "Точно сбросить?"; document.getElementById("s-reset-note").textContent = "Нажми ещё раз. Отменить будет нельзя."; return; }
+    ["lottery.lives", "lottery.atlas", "lottery.ach", "lottery.tipsSeen"].forEach(k => save(k, []));
+    reset.textContent = "Сброшено"; reset.disabled = true; document.getElementById("s-reset-note").textContent = "Прогресс очищен.";
+    if (!P) screenStart();
+  };
+  document.getElementById("s-close").onclick = closeSettings;
+  settingsBox.classList.add("show");
+  document.getElementById("s-close").focus();
+}
+function closeSettings() { settingsBox.classList.remove("show"); if (!P) screenStart(); }
+settingsBox.addEventListener("pointerdown", e => { e.stopPropagation(); if (e.target === settingsBox) closeSettings(); });
+document.getElementById("gear").onclick = openSettings;
+
+// ---------- Подсказки для первых жизней ----------
+function tip(key, title, text, where) {
+  if (!SETTINGS.tips || !where) return;
+  const seen = load("lottery.tipsSeen", []);
+  if (seen.includes(key)) return;
+  const el = document.createElement("div");
+  el.className = "tip"; el.innerHTML = `<span class="eyebrow">${title}</span><span>${text}</span><button class="ghost">Понятно</button>`;
+  el.querySelector("button").onclick = e => { e.stopPropagation(); save("lottery.tipsSeen", load("lottery.tipsSeen", []).concat(key)); el.remove(); };
+  where.prepend(el);
+}
+
+// ---------- Клавиатура ----------
+document.addEventListener("keydown", e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === "Escape") { settingsBox.classList.contains("show") ? closeSettings() : openSettings(); return; }
+  if (settingsBox.classList.contains("show")) return;
+  const scope = overlay.classList.contains("show") ? overlay : app;
+  if (/^[1-9]$/.test(e.key)) {
+    const opts = [...scope.querySelectorAll(".option:not(.dimmed):not(.chosen):not(.win):not(.lose)")];
+    const b = opts[+e.key - 1]; if (b) { e.preventDefault(); b.click(); }
+    return;
+  }
+  if (e.key === "Enter" || e.key === " ") {
+    if (e.target.closest && e.target.closest("button, a, input, textarea")) return;
+    e.preventDefault(); skipping = true;
+    const tipBtn = scope.querySelector(".tip button"); if (tipBtn) return tipBtn.click();
+    const main = scope.querySelector("button.big"); if (main) main.click();
+  }
+});
 
 // ---------- Состояние ----------
 let P = null, twins = [], mode = "random", queue = [], used = [], extraLeft = 1, toasted = new Set();
@@ -441,6 +529,7 @@ async function screenBirth() {
   <div class="row fade" style="--d:10"><button id="go" class="big pulse">Начать жизнь</button></div>`;
   scrollTo(0, 0);
   document.getElementById("go").onclick = () => { renderGame(); finishStage(); };
+  tip("birth", "Как устроена игра", "Страна, семья и характер выпали по реальной статистике. Ты проживёшь жизнь этапами по пять лет. Чем труднее старт, тем выше множитель очков.", app.querySelector(".panel"));
   await typeInto(document.getElementById("b-name"), fullName(p));
 }
 
@@ -457,6 +546,7 @@ function screenDream() {
   <p class="muted enter" style="--i:2">Если мечта сбудется, она даст 600 очков, умноженных на трудность старта.</p>
   ${opts.map((d, i) => `<button class="option enter" style="--i:${i + 3}" data-i="${i}"><b>${d.t}</b><span class="note">${d.d}</span></button>`).join("")}`;
   Sound.pop();
+  tip("dream", "Мечта", "Выбери одну цель на всю жизнь. Её видно в правом верхнем углу. Мечты, которые труднее исполнить в твоей стране, ценнее.", stage());
   stage().querySelectorAll(".option").forEach(b => b.onclick = async () => {
     P.dream = opts[+b.dataset.i];
     stage().querySelectorAll(".option").forEach(o => o.classList.add(o === b ? "chosen" : "dimmed"));
@@ -473,6 +563,7 @@ function screenFocus() {
   <p class="muted enter" style="--i:2">Фокус даёт прибавку и повышает шансы в решениях того же типа.</p>
   <div class="focus-grid">${opts.map((f, i) => `<button class="option enter" style="--i:${i + 3}" data-id="${f.id}"><span class="ico" aria-hidden="true">${FOCUS_ICON[f.id]}</span><b>${f.n}</b><span class="note">${f.d}</span></button>`).join("")}</div>`;
   Sound.pop();
+  tip("focus", "Фокус", "С 10 лет ты сам решаешь, на что тратить время. Шкалы сверху: здоровье, деньги, знания, близкие и счастье. Если здоровье упадёт до нуля, жизнь может оборваться раньше.", stage());
   stage().querySelectorAll(".option").forEach(b => b.onclick = async () => {
     P.focus = b.dataset.id;
     stage().querySelectorAll(".option").forEach(o => o.classList.add(o === b ? "chosen" : "dimmed"));
@@ -492,6 +583,7 @@ function playCard() {
   stage().innerHTML = `<span class="eyebrow enter">${card.t}</span><h2 class="enter" style="--i:1">${esc(txt(card.q, P))}</h2>
   ${opts.map((o, i) => `<button class="option enter" style="--i:${i + 2}" data-i="${i}"><b>${esc(o.l)}</b>${chips(o.yes, chanceOf(P, o))}</button>`).join("")}`;
   Sound.pop();
+  if (opts.some(o => chanceOf(P, o) < 1)) tip("chance", "Шансы", "Процент рядом с вариантом показывает шанс на успех. Он зависит от страны, семьи, характера и твоих шкал. Зелёные цифры ты получишь при успехе.", stage());
   stage().querySelectorAll(".option").forEach(b => b.onclick = () => choose(card, opts[+b.dataset.i], b));
 }
 
