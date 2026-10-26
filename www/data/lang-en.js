@@ -90,6 +90,7 @@ window.PART_EN = { "Азия": "Asia", "Америка": "the Americas", "Афр
     atlas10: ["Citizen of the world", "Be born in 10 different countries"], atlas30: ["Half the atlas", "Be born in 30 different countries"],
     exam: ["Top of the class", "Ace your national exam"], friend: ["Friends forever", "Reach 70 with your best friend still by your side"],
     survivor: ["Weathered the storm", "Survive two natural disasters and live to 70"],
+    egg: ["Easter egg", "Find the letter you wrote to yourself at fifteen"],
   };
   for (const A of window.ACHIEVEMENTS) [A.n, A.d] = ACH[A.id];
 
@@ -310,6 +311,25 @@ window.PART_EN = { "Азия": "Asia", "Америка": "the Americas", "Афр
     village: ["Village or city", "There's no work in the village, but everyone here is family.", [
       ["Move to the city", "A room on the outskirts, but there's work.", "The city didn't take to you. You came back."],
       ["Stay and keep the farm", "Your own land feeds you.", "A bad harvest."]]],
+    reunion: ["Reunion", "Your school friends invite you to a class reunion.", [
+      ["Go and remember your youth", "You laughed until you cried, like at school."],
+      ["Stay home", "Maybe next year."]]],
+    garden: ["Garden", "Spring. The soil under the window is already warm.", [
+      ["Plant something", "The first shoots have come up."],
+      ["Sit and watch", "A warm day, and nothing else is needed."]]],
+    legacy: ["Legacy", "What do you want to pass on to your children and grandchildren?", [
+      ["The family's story", "You wrote it all down, starting from the very first house."],
+      ["Money and a house", "All in the will, no arguments."]]],
+    letter: ["A letter", "In a box of documents you find a letter. You wrote it to yourself at fifteen.", [
+      ["Read it aloud to the grandchildren", "You laughed at how serious you were.", null],
+      ["Read it in silence", "That boy or girl knew what they wanted.", null],
+      ["Write back to yourself", "You wrote a reply. Someone may read it in fifty years.", null]]],
+    walk: ["Walk", "Evening, the embankment, familiar faces.", [
+      ["Walk the whole loop", "Your legs are tired, but your head is clear.", "Dizzy. You had to sit down."],
+      ["Sit on a bench", "You watched the lights come on."]]],
+    wish: ["Last wish", "There's one wish you've been putting off your whole life.", [
+      ["Make it come true, even if it's late", "Better late than never."],
+      ["Leave it for later", "There's still time."]]],
   };
   for (const card of window.CARDS) {
     const tr = CARDS[card.id];
@@ -342,6 +362,7 @@ window.PART_EN = { "Азия": "Asia", "Америка": "the Americas", "Афр
     fwed: p => `${fr(p)} is getting married and wants you at their side.`, fhelp: p => `${fr(p)} helped you out with money when things were hard.`,
     faway: p => `${fr(p)} moved to another city. Now it's just phone calls.`, fdeath: p => `Your best friend, ${fr(p)}, passed away.`,
     petdeath: "Your old dog went to sleep and didn't wake up.",
+    stars: "A cloudless night. Stars over the desert, the kind you can't see in a city.",
   };
   for (const e of window.EVENTS) if (e.id in EVENTS) e.s = EVENTS[e.id];
 })();
