@@ -164,7 +164,7 @@ function chanceOf(p, opt) {
     const F = window.FOCUS.find(f => f.id === p.focus);
     if (F && F.tag === tag) bonus += .06;
   }
-  return clamp(base + bonus, .03, .97);
+  return clamp(base + bonus + (p.bonus && p.bonus.luck || 0), .03, .97);
 }
 const softMode = () => !!(window.SETTINGS && window.SETTINGS.soft);
 function eligible(p, card) {

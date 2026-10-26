@@ -334,6 +334,43 @@ function closeSettings() { settingsBox.classList.remove("show"); if (!P) screenS
 settingsBox.addEventListener("pointerdown", e => { e.stopPropagation(); if (e.target === settingsBox) closeSettings(); });
 document.getElementById("gear").onclick = openSettings;
 
+// ---------- Очки, бонусы и темы ----------
+const BONUSES = [
+  { id: "health", n: tr("Крепкое здоровье", "Strong health"), d: tr("Здоровье на старте +6", "Starting health +6"), cost: 250, apply: p => { p.h0 += 6; p.r.h = clamp(p.r.h + 6); } },
+  { id: "money", n: tr("Стартовый капитал", "Starting savings"), d: tr("Деньги на старте +10", "Starting money +10"), cost: 250, apply: p => { p.r.m = clamp(p.r.m + 10); } },
+  { id: "curious", n: tr("Любопытство", "Curiosity"), d: tr("Знания на старте +8", "Starting knowledge +8"), cost: 350, apply: p => { p.r.k = clamp(p.r.k + 8); } },
+  { id: "home", n: tr("Тёплый дом", "Warm home"), d: tr("Близкие на старте +10", "Starting loved ones +10"), cost: 350, apply: p => { p.r.t = clamp(p.r.t + 10); } },
+  { id: "luck", n: tr("Удача", "Luck"), d: tr("+3% к шансам во всех решениях", "+3% to the odds in every decision"), cost: 600, apply: p => { p.bonus = { luck: .03 }; } },
+];
+const THEMES = [
+  { id: "night", n: tr("Ночь", "Night"), need: 0, vars: {} },
+  { id: "dawn", n: tr("Рассвет", "Dawn"), need: 3, vars: { "--ink": "#1d1420", "--panel": "#2a1c2a", "--line": "#45304a", "--life": "#ff9e7a" } },
+  { id: "aurora", n: tr("Северное сияние", "Aurora"), need: 8, vars: { "--ink": "#0b1a1f", "--panel": "#12282e", "--line": "#23444c", "--life": "#7fe0c0" } },
+  { id: "midnight", n: tr("Полночь", "Midnight"), need: 14, vars: { "--ink": "#05060a", "--panel": "#0d0f16", "--line": "#22263a", "--life": "#c9d1ff" } },
+];
+function achievementsCount() { return load("lottery.ach", []).length; }
+function applyTheme() {
+  const t = THEMES.find(x => x.id === SETTINGS.theme) || THEMES[0];
+  const st = document.documentElement.style;
+  for (const x of THEMES) for (const k in x.vars) st.removeProperty(k);
+  if (achievementsCount() >= t.need) for (const k in t.vars) st.setProperty(k, t.vars[k]);
+}
+function shopBonus(id) {
+  const owned = load("lottery.owned", []), b = BONUSES.find(x => x.id === id);
+  if (!owned.includes(id)) {
+    const pts = load("lottery.points", 0);
+    if (pts < b.cost) { toast(tr("Не хватает очков", "Not enough points"), tr(`Нужно ${fmt(b.cost)}`, `You need ${fmt(b.cost)}`)); return screenStart(); }
+    save("lottery.points", pts - b.cost); save("lottery.owned", owned.concat(id));
+    toast(tr("Бонус куплен", "Bonus bought"), b.n);
+  }
+  save("lottery.equip", load("lottery.equip", null) === id ? null : id);
+  screenStart();
+}
+function applyBonus(p) {
+  const id = load("lottery.equip", null), b = BONUSES.find(x => x.id === id);
+  if (b && load("lottery.owned", []).includes(id)) b.apply(p);
+}
+
 // ---------- Подсказки для первых жизней ----------
 function tip(key, title, text, where) {
   if (!SETTINGS.tips || !where) return;
@@ -464,9 +501,27 @@ function screenStart() {
     <div class="badges">${ACHIEVEMENTS.map(a => `<span class="badge ${got.includes(a.id) ? "on" : ""}" title="${esc(a.d)}">${a.n}</span>`).join("")}</div>
   </section>
   ${lives.length ? `<section class="panel fade" style="--d:6"><span class="eyebrow">${tr("Прожитые жизни", "Past lives")}</span><ul class="list">${lives.slice(0, 8).map(l => `<li><span>${esc(l.name)}, ${esc(countryName(l.country))}</span><span>${years(l.age)} · ${fmt(l.score)}</span></li>`).join("")}</ul></section>` : ""}
+  <section class="panel fade" style="--d:7">
+    <div class="row between"><span class="eyebrow">${tr("Очки", "Points")}</span><span class="score" style="font-size:28px">${fmt(load("lottery.points", 0))}</span></div>
+    <p class="note">${tr("За каждую жизнь начисляются очки по счёту. На них покупаются бонусы. Перед рождением можно взять один купленный бонус. Бонусы работают только в обычной игре, не в «Рождении дня».", "Each life adds its score to your points. Spend them on bonuses. Before you're born you can take one bought bonus. Bonuses apply only to the random game, not the daily birth.")}</p>
+    <div class="stack" style="gap:8px">${BONUSES.map(b => {
+      const owned = load("lottery.owned", []).includes(b.id), on = load("lottery.equip", null) === b.id;
+      return `<div class="row between" style="align-items:center"><span><b>${b.n}</b><span class="note" style="display:block">${b.d}</span></span>
+        <button class="shop ${owned && on ? "" : "ghost"}" data-bonus="${b.id}">${owned ? (on ? tr("Выбрано", "Selected") : tr("Выбрать", "Select")) : `${tr("Купить", "Buy")} · ${fmt(b.cost)}`}</button></div>`;
+    }).join("")}</div>
+  </section>
+  <section class="panel fade" style="--d:8">
+    <span class="eyebrow">${tr("Темы", "Themes")}</span>
+    <div class="row" style="gap:8px">${THEMES.map(t => {
+      const got = achievementsCount() >= t.need;
+      return `<button class="shop ${SETTINGS.theme === t.id || (!SETTINGS.theme && t.id === "night") ? "" : "ghost"}" data-theme="${t.id}" ${got ? "" : "disabled"} style="${got ? "" : "opacity:.5"}">${t.n}${got ? "" : ` · ${tr("после", "after")} ${t.need} ${tr("достижений", "achievements")}`}</button>`;
+    }).join("")}</div>
+  </section>
   <p class="note">${tr("Данные: ООН, ВОЗ, Всемирный банк. Смерть и болезни случаются с реальной частотой, но без подробностей. Нажми на экран, чтобы ускорить анимацию.", "Data: UN, WHO, World Bank. Death and illness happen at real-world rates, but never in detail. Tap the screen to speed up animations.")}</p>`;
   document.getElementById("b-random").onclick = () => begin("random");
   document.getElementById("b-daily").onclick = () => begin("daily");
+  app.querySelectorAll("button.shop[data-bonus]").forEach(b => b.onclick = () => shopBonus(b.dataset.bonus));
+  app.querySelectorAll("button.shop[data-theme]").forEach(b => b.onclick = () => { SETTINGS.theme = b.dataset.theme; saveSettings(); applyTheme(); screenStart(); });
   const q = document.getElementById("b-quit"); if (q) q.onclick = () => Platform.quit();
   scrollTo(0, 0);
 }
@@ -476,6 +531,7 @@ async function begin(m) {
   document.body.classList.remove("dim");
   setSeed(m === "daily" ? "day-" + today() : null);
   P = newPerson();
+  if (m === "random") applyBonus(P);
   twins = [0, 1, 2, 3].map(() => newPerson());
   await roulette(P);
   screenBirth();
@@ -698,6 +754,7 @@ async function screenEnd() {
   skipping = false;
   twins.forEach(autoLife);
   const s = score(p);
+  save("lottery.points", load("lottery.points", 0) + s);
   const atlas = load("lottery.atlas", []);
   if (!atlas.includes(p.home.n)) atlas.unshift(p.home.n);
   save("lottery.atlas", atlas);
@@ -779,5 +836,5 @@ window.Field = (function field() {
   };
 })();
 
-(window.Platform ? Platform.ready : Promise.resolve()).catch(() => {}).then(screenStart);
+(window.Platform ? Platform.ready : Promise.resolve()).catch(() => {}).then(() => { applyTheme(); screenStart(); });
 </script>
