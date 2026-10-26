@@ -334,6 +334,28 @@ function closeSettings() { settingsBox.classList.remove("show"); if (!P) screenS
 settingsBox.addEventListener("pointerdown", e => { e.stopPropagation(); if (e.target === settingsBox) closeSettings(); });
 document.getElementById("gear").onclick = openSettings;
 
+// ---------- Дневник жизней и рекорд дня ----------
+function diaryHTML(lives) {
+  const dayBest = load("lottery.dayBest", null);
+  const dayLine = dayBest && dayBest.date === today()
+    ? `<p class="note">${tr("Рекорд дня на этом устройстве", "Today's best on this device")}: <b>${fmt(dayBest.score)}</b> · ${esc(dayBest.name)}, ${esc(countryName(dayBest.country))}</p>` : "";
+  if (!lives.length) return "";
+  const top = (arr) => { const c = {}; arr.forEach(x => { if (x) c[x] = (c[x] || 0) + 1; }); const e = Object.entries(c).sort((a, b) => b[1] - a[1])[0]; return e ? e[0] : "—"; };
+  const avg = Math.round(lives.reduce((s, l) => s + l.age, 0) / lives.length);
+  const best = lives.reduce((m, l) => Math.max(m, l.score), 0);
+  const countries = new Set(lives.map(l => l.country)).size;
+  const jobName_ = top(lives.map(l => l.job && window.JOBS[l.job] ? jobName({ sex: "m" }, l.job) : null));
+  return `<section class="panel fade" style="--d:6"><span class="eyebrow">${tr("Дневник жизней", "Life diary")}</span>
+    <div class="stats">
+      <div class="stat"><span class="eyebrow">${tr("Жизней", "Lives")}</span><span class="v">${lives.length}</span></div>
+      <div class="stat"><span class="eyebrow">${tr("В среднем лет", "Average age")}</span><span class="v">${avg}</span></div>
+      <div class="stat"><span class="eyebrow">${tr("Лучший счёт", "Best score")}</span><span class="v">${fmt(best)}</span></div>
+      <div class="stat"><span class="eyebrow">${tr("Стран", "Countries")}</span><span class="v">${countries}</span></div>
+      <div class="stat"><span class="eyebrow">${tr("Частая работа", "Common job")}</span><span class="v" style="font-size:14px">${esc(jobName_)}</span></div>
+      <div class="stat"><span class="eyebrow">${tr("Частая причина", "Common cause")}</span><span class="v" style="font-size:14px">${esc(top(lives.map(l => l.cause)))}</span></div>
+    </div>${dayLine}</section>`;
+}
+
 // ---------- Очки, бонусы и темы ----------
 const BONUSES = [
   { id: "health", n: tr("Крепкое здоровье", "Strong health"), d: tr("Здоровье на старте +6", "Starting health +6"), cost: 250, apply: p => { p.h0 += 6; p.r.h = clamp(p.r.h + 6); } },
@@ -501,6 +523,7 @@ function screenStart() {
     <div class="badges">${ACHIEVEMENTS.map(a => `<span class="badge ${got.includes(a.id) ? "on" : ""}" title="${esc(a.d)}">${a.n}</span>`).join("")}</div>
   </section>
   ${lives.length ? `<section class="panel fade" style="--d:6"><span class="eyebrow">${tr("Прожитые жизни", "Past lives")}</span><ul class="list">${lives.slice(0, 8).map(l => `<li><span>${esc(l.name)}, ${esc(countryName(l.country))}</span><span>${years(l.age)} · ${fmt(l.score)}</span></li>`).join("")}</ul></section>` : ""}
+  ${diaryHTML(lives)}
   <section class="panel fade" style="--d:7">
     <div class="row between"><span class="eyebrow">${tr("Очки", "Points")}</span><span class="score" style="font-size:28px">${fmt(load("lottery.points", 0))}</span></div>
     <p class="note">${tr("За каждую жизнь начисляются очки по счёту. На них покупаются бонусы. Перед рождением можно взять один купленный бонус. Бонусы работают только в обычной игре, не в «Рождении дня».", "Each life adds its score to your points. Spend them on bonuses. Before you're born you can take one bought bonus. Bonuses apply only to the random game, not the daily birth.")}</p>
@@ -530,6 +553,7 @@ async function begin(m) {
   mode = m; toasted = new Set();
   document.body.classList.remove("dim");
   setSeed(m === "daily" ? "day-" + today() : null);
+  window.UNLOCKED = m === "random" ? load("lottery.ach", []) : [];
   P = newPerson();
   if (m === "random") applyBonus(P);
   twins = [0, 1, 2, 3].map(() => newPerson());
@@ -765,7 +789,11 @@ async function screenEnd() {
   if (window.Platform) Platform.unlock(now);
   const lives = load("lottery.lives", []);
   const best = lives.reduce((m, l) => Math.max(m, l.score), 0);
-  lives.unshift({ name: fullName(p), country: p.home.n, age: p.age, score: s, date: today() });
+  lives.unshift({ name: fullName(p), country: p.home.n, age: p.age, score: s, date: today(), job: p.job, cause: p.cause, mode });
+  if (mode === "daily") {
+    const best = load("lottery.dayBest", null);
+    if (!best || best.date !== today() || s > best.score) save("lottery.dayBest", { date: today(), score: s, name: fullName(p), country: p.home.n });
+  }
   save("lottery.lives", lives.slice(0, 50));
   const child = p.age < 5;
   const share = tr(`Лотерея рождения${mode === "daily" ? " · рождение дня " + today() : ""}: ${fullName(p)}, ${p.home.name}, ${years(p.age)}${p.dream ? (p.dreamDone ? ", мечта сбылась" : ", мечта не сбылась") : ""} · ${fmt(s)} очков`,

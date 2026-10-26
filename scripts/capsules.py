@@ -50,14 +50,14 @@ def title(img, text, sub, size, pad):
         d.text((pad, h - pad - sub_h), sub, font=fs, fill=(233, 230, 242))
     return img
 
-def capsule(w, h, name, focus, size, sub=None, icon=True):
+def capsule(w, h, name, focus, size, sub=None, icon=True, out=None):
     base = shade(cover(Image.open(SRC).convert("RGB"), w, h, focus))
     if icon:
         ic = Image.open(ICON).convert("RGBA").resize((round(h * 0.42),) * 2, Image.LANCZOS)
         base.paste(ic, (w - ic.width - round(h * 0.05), round(h * 0.05)), ic)
     pad = round(h * 0.07)
     title(base, "Birth Lottery", sub, round(h * 0.15), pad)
-    base.save(os.path.join(OUT, name))
+    base.save(os.path.join(out or OUT, name))
     print(name, base.size)
 
 capsule(460, 215, "capsule-header-460x215.png", 0.5, 30, "Four babies are born every second. One is you.")
@@ -67,3 +67,8 @@ capsule(920, 430, "capsule-large-920x430.png", 0.5, 56, "Four babies are born ev
 capsule(1232, 706, "capsule-hero-1232x706.png", 0.5, 76, "Four babies are born every second. One is you.")
 capsule(3840, 1240, "library-hero-3840x1240.png", 0.5, 150, "Four babies are born every second. One is you.", icon=False)
 capsule(600, 900, "library-capsule-600x900.png", 0.5, 56, "Four babies are born every second. One is you.")
+
+# баннер Google Play 1024×500
+PLAY = os.path.join(ROOT, "store", "play")
+os.makedirs(PLAY, exist_ok=True)
+capsule(1024, 500, "feature-graphic-1024x500.png", 0.5, 62, "Four babies are born every second. One is you.", out=PLAY)
