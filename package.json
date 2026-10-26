@@ -1,0 +1,83 @@
+{
+  "name": "birth-lottery",
+  "version": "0.1.0",
+  "description": "Лотерея рождения — игра о том, как место рождения определяет жизнь",
+  "private": true,
+  "main": "desktop/main.js",
+  "scripts": {
+    "vendor": "node scripts/vendor.js",
+    "serve": "npx --yes http-server www -p 8080 -c-1",
+    "cap:sync": "npm run vendor && npx cap sync",
+    "desktop": "npm run vendor && electron .",
+    "desktop:build": "npm run vendor && electron-builder --publish never",
+    "shots": "node scripts/screenshots.js",
+    "icons": "node scripts/icons.js"
+  },
+  "author": "Dima",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "steamworks.js": "^0.4.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/ios": "^8.5.3",
+    "electron": "^38.8.6",
+    "electron-builder": "^26.18.0",
+    "esbuild": "^0.28.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/manrope": "^5.3.0",
+    "@fontsource/unbounded": "^5.3.0",
+    "canvas-confetti": "^1.9.3"
+  },
+  "build": {
+    "appId": "com.birthlottery.game",
+    "productName": "Birth Lottery",
+    "executableName": "BirthLottery",
+    "directories": {
+      "output": "dist-desktop"
+    },
+    "files": [
+      "www/**/*",
+      "desktop/**/*",
+      "store/icon-512.png",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/steamworks.js/**/*"
+    ],
+    "extraFiles": [],
+    "win": {
+      "target": [
+        "dir"
+      ],
+      "icon": "store/icon-512.png"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "category": "public.app-category.simulation-games",
+      "icon": "store/icon-1024.png"
+    },
+    "linux": {
+      "target": [
+        "dir"
+      ],
+      "category": "Game",
+      "icon": "store/icon-512.png"
+    }
+  }
+}

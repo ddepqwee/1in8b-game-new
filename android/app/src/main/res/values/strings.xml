@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Лотерея рождения</string>
+    <string name="title_activity_main">Лотерея рождения</string>
+    <string name="package_name">com.birthlottery.game</string>
+    <string name="custom_url_scheme">com.birthlottery.game</string>
+</resources>

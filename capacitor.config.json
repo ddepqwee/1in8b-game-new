@@ -1,0 +1,12 @@
+{
+  "appId": "com.birthlottery.game",
+  "appName": "Лотерея рождения",
+  "webDir": "www",
+  "backgroundColor": "#0f1424",
+  "ios": { "contentInset": "never", "backgroundColor": "#0f1424" },
+  "android": { "backgroundColor": "#0f1424" },
+  "plugins": {
+    "SplashScreen": { "launchAutoHide": false, "backgroundColor": "#0f1424", "showSpinner": false },
+    "StatusBar": { "style": "DARK", "backgroundColor": "#0f1424", "overlaysWebView": false }
+  }
+}
