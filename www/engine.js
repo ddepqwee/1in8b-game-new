@@ -62,7 +62,9 @@ const QUINTILE = tr(["", "очень бедной", "бедной", "средн�
 const CONFLICTS = [["strong", "frail"], ["charm", "loner"], ["careful", "daring"]];
 
 function rollTraits() {
-  const ids = Object.keys(window.TRAITS), out = [pick(ids)];
+  // черты с условием открываются достижениями (window.UNLOCKED) и только в обычной игре
+  const unlocked = window.UNLOCKED || [];
+  const ids = Object.keys(window.TRAITS).filter(id => !window.TRAITS[id].unlock || unlocked.includes(window.TRAITS[id].unlock)), out = [pick(ids)];
   if (rng() < .45) {
     const second = pick(ids.filter(id => id !== out[0] && !CONFLICTS.some(([a, b]) => (a === out[0] && b === id) || (b === out[0] && a === id))));
     out.push(second);

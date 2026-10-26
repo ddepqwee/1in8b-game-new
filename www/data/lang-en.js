@@ -58,6 +58,10 @@ window.PART_EN = { "Азия": "Asia", "Америка": "the Americas", "Афр
     daring: ["Courage", "+10% to risky decisions and moving"],
     optimist: ["Optimism", "Happiness stays higher"],
     loner: ["Introvert", "Relationships grow slower, knowledge faster"],
+    lucky: ["Lucky", "Wins and windfalls bring in more money"],
+    giver: ["Generosity", "Loved ones value your kindness: relationships grow faster"],
+    wanderer: ["Wanderer", "Moves and trips come easier"],
+    elder: ["Long memory", "Knowledge grows faster, but health holds up less well"],
   };
   for (const [id, [n, d]] of Object.entries(TRAITS)) Object.assign(window.TRAITS[id], { n, d });
 
