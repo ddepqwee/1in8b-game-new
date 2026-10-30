@@ -84,6 +84,31 @@ button.big { font-size: 18px; padding: 16px 26px; }
 .roll .zone { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: #2f5a47; }
 .roll .needle { position: absolute; top: -5px; width: 3px; height: 20px; border-radius: 2px; background: var(--fg); left: 0; box-shadow: 0 0 10px rgba(233,230,242,.8); }
 .stamp { font-family: var(--display); font-weight: 800; font-size: 15px; letter-spacing: .04em; animation: stamp .35s cubic-bezier(.2,1.6,.4,1) both; }
+.mini { border: 1px solid var(--life); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; background: rgba(242,180,90,.06); }
+.mini-q { font-family: var(--display); font-size: 30px; font-weight: 800; text-align: center; }
+.mini-opts { justify-content: center; gap: 8px; } .mini-opts button { min-width: 64px; font-size: 18px; }
+.mini-time { height: 6px; border-radius: 99px; background: #3a2530; overflow: hidden; } .mini-time i { display: block; height: 100%; background: var(--life); }
+.mini-beat { position: relative; height: 120px; display: grid; place-items: center; touch-action: manipulation; cursor: pointer; }
+.mini-beat .core, .mini-beat .ring { position: absolute; width: 56px; height: 56px; border-radius: 50%; }
+.mini-beat .core { background: rgba(242,180,90,.25); border: 2px solid var(--life); }
+.mini-beat .ring { border: 3px solid var(--fg); transition: opacity .1s; }
+.mini-grade { position: absolute; top: 4px; font-weight: 700; opacity: 0; } .mini-grade.show { animation: gradeup .6s ease-out both; }
+.mini-grade.ok, .mini-res.ok { color: var(--good); } .mini-grade.no, .mini-res.no { color: var(--bad); }
+@keyframes gradeup { from { opacity: 1; transform: translateY(8px); } to { opacity: 0; transform: translateY(-10px); } }
+.mini-haggle { position: relative; height: 26px; border-radius: 99px; background: #3a2530; cursor: pointer; touch-action: manipulation; }
+.mini-haggle .zone { position: absolute; left: 40%; width: 20%; top: 0; bottom: 0; background: #2f5a47; border-radius: 6px; }
+.mini-haggle .knob { position: absolute; top: -5px; width: 6px; height: 36px; margin-left: -3px; border-radius: 3px; background: var(--fg); box-shadow: 0 0 12px rgba(233,230,242,.8); }
+.mini-haggle .knob.stop { background: var(--life); }
+.mini-skip { padding: 4px 12px; font-size: 13px; }
+.mini-res { font-size: 20px; text-align: center; display: block; }
+.ftree { display: flex; flex-direction: column; align-items: center; padding: 6px 0; }
+.tnode { border: 1px solid rgba(233,230,242,.18); border-radius: 12px; padding: 6px 12px; text-align: center; display: flex; flex-direction: column; animation: in .45s calc(.4s + var(--i) * .22s) both; }
+.tnode.me { border-color: var(--life); box-shadow: 0 0 18px -6px var(--life); }
+.tnode.kid { padding: 4px 10px; font-size: 14px; }
+.tlink { width: 2px; height: 18px; background: rgba(233,230,242,.3); transform-origin: top; animation: tlink .3s calc(.3s + var(--i) * .22s) both; }
+.tkids { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding-top: 10px; border-top: 2px solid rgba(233,230,242,.3); animation: in .4s calc(.3s + var(--i) * .22s) both; }
+@keyframes tlink { from { transform: scaleY(0); } }
+.globe { display: block; margin: 0 auto 4px; }
 .stamp.ok { color: var(--good); } .stamp.no { color: var(--bad); }
 @keyframes stamp { from { opacity: 0; transform: scale(1.8); } to { opacity: 1; transform: none; } }
 .result-text { animation: enter .4s ease both; animation-delay: .15s; }
@@ -239,7 +264,8 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border: 1px s
 @keyframes hit { 15% { transform: translate(-6px, 2px); } 30% { transform: translate(5px, -2px); } 45% { transform: translate(-4px, 1px); } 60% { transform: translate(3px, 0); } }
 .hud.glow { animation: glow 1.1s ease; }
 @keyframes glow { 30% { box-shadow: 0 0 40px -6px rgba(127,209,166,.6); border-color: var(--good); } }
-.avatar { display: inline-block; margin-right: 6px; }
+.avatar { display: inline-block; margin-right: 6px; vertical-align: middle; width: 34px; height: 34px; border-radius: 50%; background: rgba(233,230,242,.07); overflow: hidden; }
+.avatar svg { display: block; transition: opacity .3s; }
 .avatar.grow { animation: stamp .5s cubic-bezier(.2,1.6,.4,1) both; }
 .log li.rare .ic { background: linear-gradient(135deg, #f6d29a, var(--life)); color: var(--ink); box-shadow: 0 0 14px rgba(242,180,90,.7); }
 .log li.rare > span:last-child { color: var(--life); }
@@ -326,9 +352,13 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border: 1px s
 <script src="data/content-places.js"></script>
 <script src="data/content-meta.js"></script>
 <script src="data/content-legacy.js"></script>
+<script src="data/content-eras.js"></script>
+<script src="data/content-arcs.js"></script>
+<script src="data/content-weekly.js"></script>
 <script src="data/names-en.js"></script>
 <script src="data/lang-en.js"></script>
 <script src="engine.js"></script>
+<script src="globe.js"></script>
 <script>
 // ---------- Утилиты ----------
 const app = document.getElementById("app"), overlay = document.getElementById("overlay");
@@ -349,7 +379,7 @@ function load(key, def) { try { return JSON.parse(localStorage.getItem(key)) ?? 
 const today = () => new Date().toISOString().slice(0, 10);
 
 // ---------- Настройки ----------
-window.SETTINGS = Object.assign({ fast: false, soft: false, tips: true }, load("lottery.settings", {}));
+window.SETTINGS = Object.assign({ fast: false, soft: false, tips: true, mini: true }, load("lottery.settings", {}));
 const saveSettings = () => save("lottery.settings", SETTINGS);
 const speed = ms => SETTINGS.fast ? ms * .45 : ms;
 
@@ -446,6 +476,7 @@ const SETTING_ROWS = [
   ["music", tr("Музыка", "Music"), tr("Тихая фоновая музыка, меняется с главами жизни и настроением", "Quiet background music that follows life's chapters and your mood")],
   ["fast", tr("Быстрые анимации", "Fast animations"), tr("Всё то же, но в два раза быстрее", "Everything the same, twice as fast")],
   ["soft", tr("Мягкий режим", "Gentle mode"), tr("Без войн, преступлений, насилия и аварий", "No war, crime, violence or accidents")],
+  ["mini", tr("Мини-игры", "Mini-games"), tr("Иногда шанс можно поднять: решить пример, попасть в ритм, сторговаться", "Sometimes you can raise the odds: solve a sum, hit the beat, haggle")],
   ["tips", tr("Подсказки", "Hints"), tr("Объяснения правил в первых жизнях", "Rule explanations in your first lives")],
 ];
 const getSetting = k => k === "sound" ? Sound.on : k === "music" ? Music.on : SETTINGS[k];
@@ -558,7 +589,7 @@ const codexTotal = () => CARDS.length + EVENTS.filter(e => e.s).length;
 function metaNow(extra = {}) {
   const codex = load("lottery.codex", { c: [], e: [] });
   return { gen: 1, endings: Object.keys(load("lottery.endings", {})).length, level: soulLevel(), challenges: load("lottery.challenges", []).length,
-    lives: load("lottery.livesTotal", load("lottery.lives", []).length), dailies: load("lottery.dailies", []).length,
+    lives: load("lottery.livesTotal", load("lottery.lives", []).length), dailies: load("lottery.dailies", []).length, weeks: load("lottery.weeks", []).length,
     codex: (codex.c.length + codex.e.length) / codexTotal(), rares: load("lottery.rares", []).length, ...extra };
 }
 function applyTheme() {
@@ -604,7 +635,7 @@ function tip(key, title, text, where) {
 document.addEventListener("keydown", e => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === "Escape") { settingsBox.classList.contains("show") ? closeSettings() : openSettings(); return; }
-  if (settingsBox.classList.contains("show")) return;
+  if (settingsBox.classList.contains("show") || Mini.active) return;
   const scope = overlay.classList.contains("show") ? overlay : app;
   if (/^[1-9]$/.test(e.key)) {
     const opts = [...scope.querySelectorAll(".option:not(.dimmed):not(.chosen):not(.win):not(.lose)")];
@@ -660,12 +691,16 @@ function renderGame() {
 }
 function updateHud(changes = []) {
   const p = P;
-  document.getElementById("h-country").textContent = p.c.name + (p.f.emigrated && !p.f.returned ? tr(" · родина: ", " · born in ") + p.home.name : "");
+  document.getElementById("h-country").textContent = yearOf(p) + " · " + p.c.name + (p.f.emigrated && !p.f.returned ? tr(" · родина: ", " · born in ") + p.home.name : "");
   document.getElementById("h-dream").innerHTML = p.dream ? `<span class="eyebrow">${tr("Мечта", "Dream")}</span><span class="dream ${p.dreamDone ? "done" : ""}">${p.dreamDone ? "✓ " : ""}${p.dream.t}</span><span class="note">${p.dream.d}</span>` : "";
   const fam = familyLine(p), job = jobLine(p);
   document.getElementById("h-facts").innerHTML = `${job ? `<span>${job}</span>` : ""}${fam ? `<span>${esc(fam)}</span>` : ""}${challenge ? `<span>${tr("цель", "goal")}: ${esc(challenge.goal.toLowerCase())}${challenge.ok(p) ? " ✓" : ""}</span>` : ""}`;
-  const ava = document.getElementById("h-ava"), face = avatar(p);
-  if (ava.textContent !== face) { ava.textContent = face; ava.classList.remove("grow"); void ava.offsetWidth; ava.classList.add("grow"); }
+  const ava = document.getElementById("h-ava"), face = portrait(p), key = ava.dataset.k;
+  if (key !== face.k) {
+    const grown = key && key.split("|")[0] !== face.k.split("|")[0];
+    ava.innerHTML = face.svg; ava.dataset.k = face.k;
+    if (grown) { ava.classList.remove("grow"); void ava.offsetWidth; ava.classList.add("grow"); }
+  }
   const pos = Math.min(100, p.age / TL_MAX * 100) + "%";
   document.getElementById("h-lived").style.width = pos;
   document.getElementById("h-me").style.left = pos;
@@ -687,6 +722,36 @@ function updateHud(changes = []) {
     if (d) { const el = document.createElement("span"); el.className = "delta " + (d > 0 ? "up" : "down"); el.textContent = (d > 0 ? "+" : "") + d; row.appendChild(el); setTimeout(() => el.remove(), 1400); }
   }
   setMood(p);
+}
+// портрет в HUD стареет вместе с тобой: волосы седеют, появляются морщины и очки, улыбка следует за счастьем
+const SKIN = { "Африка": ["#8d5a3b", "#6e4429", "#a8704b"], "Азия": ["#e0b48c", "#c99a6e", "#b07a52"], "Европа": ["#f1cfb3", "#e8bc9a", "#d9a982"], "Америка": ["#d9a982", "#b9845c", "#f1cfb3"], "Океания": ["#b07a52", "#d9a982", "#8d5a3b"] };
+const HAIR = ["#2b1d16", "#3b2a1f", "#5a3b24", "#1b1b1f", "#8a5a2e", "#b98a4e", "#9c3e22"];
+function portrait(p) {
+  const h = hashStr(p.first + p.last), a = p.age, f = p.sex === "f";
+  const skins = SKIN[p.home.part] || SKIN["Азия"], skin = skins[h % skins.length];
+  const grey = a < 40 ? 0 : Math.min(1, (a - 40) / 35), base = HAIR[(h >>> 3) % (p.home.part === "Европа" || p.home.part === "Америка" ? HAIR.length : 4)];
+  const mix = (c1, c2, t) => "#" + [1, 3, 5].map(i => Math.round(parseInt(c1.slice(i, i + 2), 16) * (1 - t) + parseInt(c2.slice(i, i + 2), 16) * t).toString(16).padStart(2, "0")).join("");
+  const hair = mix(base, "#d8d8dc", grey * .9), j = p.r.j;
+  const baby = a < 3, kid = a < 13, bald = !f && a >= 55 && h % 3 === 0;
+  const mouth = j >= 60 ? "M17 27 Q22 31 27 27" : j >= 35 ? "M18 28 L26 28" : "M17 29 Q22 25.5 27 29";
+  const glasses = p.f.glasses || (a >= 60 && h % 2 === 0);
+  const beard = !f && a >= 22 && (h >>> 5) % 4 === 0;
+  const k = [baby ? 0 : kid ? 1 : a < 25 ? 2 : a < 45 ? 3 : a < 60 ? 4 : a < 75 ? 5 : 6, j >= 60 ? 2 : j >= 35 ? 1 : 0, glasses ? 1 : 0].join("|");
+  const sc = baby ? .78 : kid ? .88 : 1;
+  const svg = `<svg viewBox="0 0 44 44" width="34" height="34" aria-hidden="true"><g transform="translate(22 24) scale(${sc}) translate(-22 -24)">
+    ${f && !baby ? `<path d="M9 22 Q8 8 22 7 Q36 8 35 22 L36 ${a >= 60 ? 30 : 38} Q22 ${a >= 60 ? 33 : 41} 8 ${a >= 60 ? 30 : 38} Z" fill="${hair}"/>` : ""}
+    <ellipse cx="22" cy="23" rx="11" ry="12.5" fill="${skin}"/>
+    ${baby ? `<path d="M20 11 Q22 8 24 11" stroke="${hair}" stroke-width="1.4" fill="none"/>` : bald ? `<path d="M11 20 Q10 13 13 15 M33 20 Q34 13 31 15" stroke="${hair}" stroke-width="2.4" fill="none" stroke-linecap="round"/>` : `<path d="M10.5 21 Q10 9.5 22 9.5 Q34 9.5 33.5 21 Q31 13 22 14 Q14 13.5 10.5 21 Z" fill="${hair}"/>`}
+    ${beard ? `<path d="M12 26 Q13 37 22 37 Q31 37 32 26 Q28 32 22 32 Q16 32 12 26 Z" fill="${hair}"/>` : ""}
+    <circle cx="17.5" cy="22" r="1.3" fill="#1a1420"/><circle cx="26.5" cy="22" r="1.3" fill="#1a1420"/>
+    ${baby || kid ? `<circle cx="14.5" cy="27" r="2" fill="#e8807a" opacity=".35"/><circle cx="29.5" cy="27" r="2" fill="#e8807a" opacity=".35"/>` : ""}
+    ${a >= 45 ? `<path d="M17 15.5 Q22 14.5 27 15.5" stroke="#000" stroke-opacity=".22" stroke-width=".7" fill="none"/>` : ""}
+    ${a >= 60 ? `<path d="M13 21 l-1.6 -.8 M13 23 l-1.8 .2 M31 21 l1.6 -.8 M31 23 l1.8 .2" stroke="#000" stroke-opacity=".25" stroke-width=".6"/><path d="M16 30 Q15 28 15.5 26 M28 30 Q29 28 28.5 26" stroke="#000" stroke-opacity=".18" stroke-width=".6" fill="none"/>` : ""}
+    ${a >= 75 ? `<path d="M16.5 17.5 Q22 16.5 27.5 17.5" stroke="#000" stroke-opacity=".18" stroke-width=".6" fill="none"/>` : ""}
+    ${glasses ? `<g fill="none" stroke="#2a2633" stroke-width="1"><circle cx="17.5" cy="22" r="3.4"/><circle cx="26.5" cy="22" r="3.4"/><path d="M20.9 22 h2.2"/></g>` : ""}
+    <path d="${mouth}" stroke="#6b2e2e" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+  </g></svg>`;
+  return { svg, k };
 }
 function avatar(p) {
   const a = p.age, f = p.sex === "f";
@@ -746,12 +811,20 @@ function bindCollections() {
   box.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { colTab = b.dataset.tab; box.innerHTML = collectionsHTML(); bindCollections(); });
 }
 // снимок родителя, чтобы продолжить род даже после перезапуска игры
-function heirSnapshot(p) { return { cn: p.c.n, r: p.r, peak: p.peak, fam: p.fam, partner: p.partner, traits: p.traits, kids: p.kids, sex: p.sex, first: p.first, last: p.last, order: p.order, f: { house: !!p.f.house }, gen: p.gen || 1 }; }
+function heirSnapshot(p) { return { cn: p.c.n, r: p.r, peak: p.peak, fam: p.fam, partner: p.partner, traits: p.traits, kids: p.kids, sex: p.sex, first: p.first, last: p.last, order: p.order, f: heirFlags(p), born: p.born, gen: p.gen || 1, friend: p.friend, rival: p.rival, rep: window.REP_OF ? REP_OF(p) : 0 }; }
+// что переходит детям: дом, семейное дело, реликвия, слава рода
+const HEIR_F = ["house", "biz", "bizMax", "restaurant", "shopChain", "hostel", "vetClinic", "captain", "heirloom", "treasure", "famous", "farmLand", "landDone", "philanthropy", "honored", "relic"];
+function heirFlags(p) { const f = {}; for (const k of HEIR_F) if (p.f[k]) f[k] = p.f[k]; f.job = p.job; f.jobsHeld = p.f.jobsHeld; return f; }
 function fromSnapshot(s) { return { ...s, c: COUNTRIES.find(c => c.n === s.cn) || COUNTRIES[0] }; }
 const kidLabel = k => tr(k.sex === "f" ? "дочь" : "сын", k.sex === "f" ? "daughter" : "son");
 function heirButtons(parent) { return parent.kids.slice(0, 8).map((k, i) => `<button class="ghost heir" data-k="${i}">${esc(k.first)} · ${kidLabel(k)}</button>`).join(""); }
 function bindHeirs(parent) { app.querySelectorAll("button.heir").forEach(b => b.onclick = () => begin("random", { heir: parent.kids[+b.dataset.k], parent, gen: (parent.gen || 1) + 1 })); }
 
+// кнопка испытания недели: эпоха, часть света и лучший счёт за эту неделю
+function weekBtn() {
+  const W = WEEKLY(), best = load("lottery.weekBest", null), done = load("lottery.weeks", []).includes(W.id);
+  return `<button id="b-week" class="ghost">${done ? "✓ " : ""}${esc(W.n)} · ${W.year}${best && best.week === W.week ? ` · ${tr("рекорд", "best")} ${fmt(best.score)}` : ""}</button>`;
+}
 function screenStart() {
   document.body.classList.remove("dim"); setMood(null); P = null;
   const lives = load("lottery.lives", []), xp = load("lottery.xp", 0), lvl = levelOf(xp);
@@ -764,6 +837,7 @@ function screenStart() {
     <div class="row fade" style="--d:3">
       <button id="b-random" class="big pulse">${tr("Родиться", "Be born")}</button>
       <button id="b-daily" class="ghost">${tr("Рождение дня", "Daily birth")} · ${tr(today().split("-").reverse().slice(0, 2).join("."), today().slice(5).replace("-", "/"))}</button>
+      ${weekBtn()}
       <button id="b-chal" class="ghost" ${lvl >= 2 ? "" : "disabled style=\"opacity:.5\""}>${tr("Испытания", "Challenges")}${lvl >= 2 ? "" : ` · ${tr("уровень", "level")} 2`}</button>
       ${window.Platform && Platform.desktop ? `<button id="b-quit" class="ghost">${tr("Выйти", "Quit")}</button>` : ""}
     </div>
@@ -796,6 +870,7 @@ function screenStart() {
   <p class="note">${tr("Данные: ООН, ВОЗ, Всемирный банк. Смерть и болезни случаются с реальной частотой, но без подробностей. Нажми на экран, чтобы ускорить анимацию.", "Data: UN, WHO, World Bank. Death and illness happen at real-world rates, but never in detail. Tap the screen to speed up animations.")}</p>`;
   document.getElementById("b-random").onclick = () => begin("random");
   document.getElementById("b-daily").onclick = () => begin("daily");
+  document.getElementById("b-week").onclick = () => begin("weekly");
   document.getElementById("b-chal").onclick = () => screenChallenges();
   bindCollections();
   if (parent) bindHeirs(parent);
@@ -825,9 +900,14 @@ function screenChallenges() {
 async function begin(m, opt = {}) {
   mode = m; toasted = new Set(); challenge = null;
   document.body.classList.remove("dim");
-  setSeed(m === "daily" ? "day-" + today() : null);
-  window.UNLOCKED = m === "daily" ? [] : load("lottery.ach", []);
-  if (m === "challenge") {
+  setSeed(m === "daily" ? "day-" + today() : m === "weekly" ? "week-" + isoWeek() : null);
+  window.UNLOCKED = m === "daily" || m === "weekly" ? [] : load("lottery.ach", []);
+  if (m === "weekly") {
+    challenge = WEEKLY();
+    window.BIRTH_YEAR = challenge.year;
+    P = newPerson(weighted(COUNTRIES.filter(c => c.part === challenge.part), x => x.b));
+    window.BIRTH_YEAR = undefined;
+  } else if (m === "challenge") {
     challenge = CHALLENGES.find(c => c.id === opt.id);
     P = newPerson(challenge.country ? weighted(COUNTRIES.filter(challenge.country), x => x.b) : undefined);
     if (challenge.setup) challenge.setup(P);
@@ -840,6 +920,7 @@ async function begin(m, opt = {}) {
   P.gen = opt.gen || 1;
   if (m === "random") applyBonus(P);
   twins = [0, 1, 2, 3].map(() => newPerson());
+  twins.forEach(t => t.born = P.born);
   if (opt.heir) await familyTree(P); else await roulette(P);
   screenBirth();
 }
@@ -869,7 +950,7 @@ async function chapter(age) {
   const c = CHAPTERS[age]; if (!c) return;
   Music.chapter(age); window.Field && Field.season(age);
   skipping = false;
-  overlay.innerHTML = `<div class="chapter"><span class="num">${c[0]}</span><h1>${c[1]}</h1><div class="line"></div></div>`;
+  overlay.innerHTML = `<div class="chapter"><span class="num">${c[0]}</span><h1>${c[1]}</h1><div class="line"></div><span class="eyebrow">${yearOf(P)}</span></div>`;
   overlay.classList.add("show"); Sound.chime();
   await sleep(1700);
   overlay.classList.remove("show");
@@ -883,16 +964,17 @@ async function roulette(p) {
   overlay.innerHTML = `<div class="roulette"><span class="eyebrow">${tr("Рождение", "Birth")}</span><div class="slot" id="slot">…</div><div class="odds" id="odds">&nbsp;</div><div class="counter" id="cnt">&nbsp;</div></div>`;
   overlay.classList.add("show");
   Sound.ensure();
+  const gl = window.Globe && !REDUCE ? Globe.mount(overlay.querySelector(".roulette")) : null;
   const slot = document.getElementById("slot"), cnt = document.getElementById("cnt");
   const steps = 28;
   for (let i = 0; i < steps; i++) {
     const c = weighted(COUNTRIES, x => x.b);
-    slot.textContent = c.name; Sound.tick();
+    slot.textContent = c.name; Sound.tick(); gl && gl.spin(c, i / steps);
     cnt.textContent = tr(`рождений в мире за это время: `, `births worldwide meanwhile: `) + fmt(Math.round((i + 1) * 4.3));
     await sleep(35 + Math.pow(i / steps, 3) * 320);
     if (skipping) break;
   }
-  slot.textContent = p.c.name; slot.classList.add("final");
+  slot.textContent = p.c.name; slot.classList.add("final"); gl && gl.land(p.c);
   Sound.chime(); window.Field && Field.burst();
   await tween(1, p.c.odds, 900, v => document.getElementById("odds").textContent = tr("шанс 1 из ", "odds 1 in ") + fmt(Math.round(v)));
   if (p.c.odds >= 500) burst({ particleCount: 60 });
@@ -900,6 +982,7 @@ async function roulette(p) {
   await sleep(1200);
   overlay.classList.remove("show");
   await sleep(250);
+  gl && gl.stop();
 }
 
 async function typeInto(el, text, ms = 45) {
@@ -912,7 +995,7 @@ async function screenBirth() {
   skipping = false;
   setMood(p);
   app.innerHTML = `<section class="stack">
-    <span class="eyebrow fade">${mode === "daily" ? tr("Рождение дня", "Daily birth") : mode === "challenge" ? tr("Испытание", "Challenge") + ": " + esc(challenge.n) : p.gen > 1 ? tr("Поколение ", "Generation ") + p.gen : tr("Только что", "Just now")} · ${tr(g(p, "мальчик", "девочка"), g(p, "boy", "girl"))}</span>
+    <span class="eyebrow fade">${mode === "daily" ? tr("Рождение дня", "Daily birth") : mode === "weekly" ? tr("Испытание недели", "Weekly challenge") : mode === "challenge" ? tr("Испытание", "Challenge") + ": " + esc(challenge.n) : p.gen > 1 ? tr("Поколение ", "Generation ") + p.gen : tr("Только что", "Just now")} · ${p.born} · ${tr(g(p, "мальчик", "девочка"), g(p, "boy", "girl"))}</span>
     <h1 id="b-name">&nbsp;</h1>
     <svg class="ecg" viewBox="0 0 320 34" aria-hidden="true"><path d="M0 20 H70 L78 20 L84 8 L90 30 L96 4 L102 26 L108 20 H180 L188 20 L194 10 L200 28 L206 6 L212 24 L218 20 H320"/></svg>
     <p class="muted fade" style="--d:2">${c.name}, ${c.partName}. ${tr(`Шанс родиться здесь: 1 из ${fmt(c.odds)}. Семья ${QUINTILE[p.q]} по меркам страны.`, `Odds of being born here: 1 in ${fmt(c.odds)}. A ${QUINTILE[p.q]} family by local standards.`)}</p>
@@ -1012,11 +1095,147 @@ function playCard() {
   stage().querySelectorAll(".option").forEach(b => b.onclick = () => choose(card, opts[+b.dataset.i], b));
 }
 
+// ---------- Мини-игры: иногда шанс можно поднять своими руками ----------
+// экзамен (учёба), ритм (искусство, музыка, спорт), торг (дело). Дают от −15% до +15% к шансу,
+// не чаще одной за этап. Отключаются в настройках.
+const Mini = {
+  active: false,
+  kind(opt) {
+    const t = opt.tags || [];
+    return t.includes("study") ? "exam" : t.includes("business") ? "haggle" : t.some(x => x === "art" || x === "music" || x === "sport") ? "rhythm" : null;
+  },
+  async play(kind, host) {
+    this.active = true;
+    const box = document.createElement("div");
+    box.className = "mini enter";
+    host.after(box);
+    box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    let score;
+    try { score = await this[kind](box); } finally { this.active = false; }
+    box.querySelector(".mini-body").innerHTML = `<b class="mini-res ${score >= .5 ? "ok" : "no"}">${score >= .85 ? tr("Блестяще!", "Brilliant!") : score >= .5 ? tr("Неплохо", "Not bad") : tr("Мимо", "Missed")}</b>`;
+    score >= .5 ? Sound.good() : Sound.bad();
+    await sleep(650);
+    box.remove();
+    return score;
+  },
+  // общий каркас: заголовок, тело, кнопка «пропустить» (даёт ровно ноль)
+  frame(box, title, hint) {
+    box.innerHTML = `<div class="row between"><span class="eyebrow">${title}</span><button class="ghost mini-skip">${tr("Пропустить", "Skip")}</button></div><p class="note">${hint}</p><div class="mini-body"></div>`;
+    return box.querySelector(".mini-body");
+  },
+  listen(box, onTap, onSkip) {
+    const key = e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); e.stopPropagation(); onTap(); } else if (/^[1-4]$/.test(e.key)) { e.stopPropagation(); onTap(+e.key - 1); } };
+    document.addEventListener("keydown", key, true);
+    box.querySelector(".mini-skip").onclick = e => { e.stopPropagation(); onSkip(); };
+    return () => document.removeEventListener("keydown", key, true);
+  },
+  // три примера за девять секунд
+  exam(box) {
+    return new Promise(done => {
+      const body = this.frame(box, tr("Экзамен", "Exam"), tr("Реши три примера, пока не кончилось время. Клавиши 1–4.", "Solve three sums before time runs out. Keys 1–4."));
+      const task = () => {
+        const kid = P.age < 12, op = kid ? pick(["+", "−"]) : pick(["+", "−", "×"]), top = kid ? 10 : 40;
+        let a = 2 + Math.floor(Math.random() * (op === "×" ? 9 : top)), b = 2 + Math.floor(Math.random() * (op === "×" ? 9 : top * .75));
+        if (op === "−" && b > a) [a, b] = [b, a];
+        const ans = op === "+" ? a + b : op === "−" ? a - b : a * b;
+        const opts = new Set([ans]);
+        while (opts.size < 4) opts.add(ans + (Math.floor(Math.random() * 7) - 3 || 4) * (op === "×" ? a > 5 ? 1 : 2 : 1) + (opts.size > 2 ? 10 : 0));
+        return { q: `${a} ${op} ${b}`, ans, opts: [...opts].sort(() => Math.random() - .5) };
+      };
+      const T = 9000, t0 = performance.now();
+      let n = 0, right = 0, cur = task(), over = false;
+      const draw = () => { body.innerHTML = `<div class="mini-q">${cur.q} = ?</div><div class="mini-time"><i></i></div><div class="row mini-opts">${cur.opts.map((o, i) => `<button class="ghost" data-i="${i}">${o}</button>`).join("")}</div><span class="note">${n + 1} / 3</span>`; body.querySelectorAll("button").forEach(b => b.onclick = e => { e.stopPropagation(); answer(+b.dataset.i); }); };
+      const finish = s => { if (over) return; over = true; stop(); done(s); };
+      const answer = i => {
+        if (over || i == null) return;
+        const ok = cur.opts[i] === cur.ans; if (ok) right++;
+        Sound.tone(ok ? 880 : 220, .08, "triangle", .05);
+        if (++n >= 3) return finish(right / 3);
+        cur = task(); draw();
+      };
+      const stop = this.listen(box, answer, () => finish(.5));
+      draw();
+      (function tick(now) {
+        if (over) return;
+        const left = 1 - (now - t0) / T, bar = body.querySelector(".mini-time i");
+        if (bar) bar.style.width = Math.max(0, left * 100) + "%";
+        if (left <= 0) return finish(right / 3);
+        requestAnimationFrame(tick);
+      })(t0);
+    });
+  },
+  // четыре удара: нажми, когда кольцо сожмётся до круга
+  rhythm(box) {
+    return new Promise(done => {
+      const body = this.frame(box, tr("Ритм", "Rhythm"), tr("Нажимай, когда кольцо совпадёт с кругом. Пробел или касание.", "Tap when the ring meets the circle. Space or tap."));
+      body.innerHTML = `<div class="mini-beat"><div class="core"></div><div class="ring"></div><span class="mini-grade"></span></div>`;
+      const ring = body.querySelector(".ring"), grade = body.querySelector(".mini-grade");
+      const BEAT = 900, LEAD = 700, N = 4, t0 = performance.now() + 500;
+      const hits = Array(N).fill(0), taken = Array(N).fill(false);
+      let over = false;
+      const finish = s => { if (over) return; over = true; stop(); done(s); };
+      const tap = () => {
+        if (over) return;
+        const now = performance.now(), i = Math.round((now - t0 - LEAD) / BEAT);
+        if (i < 0 || i >= N || taken[i]) return;
+        const err = Math.abs(now - (t0 + LEAD + i * BEAT));
+        taken[i] = true; hits[i] = Math.max(0, 1 - err / 260);
+        grade.textContent = hits[i] > .75 ? tr("Точно!", "Perfect!") : hits[i] > .35 ? tr("Хорошо", "Good") : tr("Мимо", "Miss");
+        grade.className = "mini-grade show " + (hits[i] > .35 ? "ok" : "no"); void grade.offsetWidth;
+        Sound.tone(hits[i] > .35 ? 660 + i * 110 : 180, .1, "triangle", .06);
+      };
+      body.querySelector(".mini-beat").onpointerdown = e => { e.stopPropagation(); tap(); };
+      const stop = this.listen(box, tap, () => finish(.5));
+      (function frame(now) {
+        if (over) return;
+        const t = now - t0;
+        if (t > LEAD + (N - 1) * BEAT + 400) return finish(hits.reduce((a, b) => a + b, 0) / N);
+        const i = Math.max(0, Math.round((t - LEAD) / BEAT)), phase = (t - LEAD - i * BEAT) / LEAD; // −1…0 до удара
+        const s = t < 0 ? 2.4 : 1 - Math.max(-1.4, Math.min(.2, phase)) * 1;
+        ring.style.transform = `scale(${s.toFixed(3)})`;
+        ring.style.opacity = phase > .15 ? .2 : 1;
+        requestAnimationFrame(frame);
+      })(performance.now());
+    });
+  },
+  // торг: бегунок качается по шкале цен, останови в зелёной зоне
+  haggle(box) {
+    return new Promise(done => {
+      const body = this.frame(box, tr("Торг", "Haggling"), tr("Останови бегунок в зелёной зоне. Пробел или касание.", "Stop the slider in the green zone. Space or tap."));
+      body.innerHTML = `<div class="mini-haggle"><div class="zone"></div><div class="knob"></div></div><div class="row between note"><span>${tr("дорого", "too high")}</span><span>${tr("в самый раз", "just right")}</span><span>${tr("обидно", "insulting")}</span></div>`;
+      const knob = body.querySelector(".knob"), t0 = performance.now();
+      let over = false, x = 0;
+      const finish = s => { if (over) return; over = true; stop(); done(s); };
+      const tap = () => { if (over) return; knob.classList.add("stop"); finish(Math.max(0, 1 - Math.abs(x - .5) * 3.2)); };
+      body.querySelector(".mini-haggle").onpointerdown = e => { e.stopPropagation(); tap(); };
+      const stop = this.listen(box, tap, () => finish(.5));
+      (function frame(now) {
+        if (over) return;
+        const t = (now - t0) / 1000;
+        if (t > 8) return finish(.3);
+        x = .5 + .5 * Math.sin(t * (2.4 + t * .35));
+        knob.style.left = (x * 100).toFixed(1) + "%";
+        requestAnimationFrame(frame);
+      })(t0);
+    });
+  },
+};
+let miniAge = -1;
+
 async function choose(card, opt, btn) {
+  if (btn.classList.contains("chosen")) return;
   skipping = false;
   stage().querySelectorAll(".option").forEach(o => o.classList.add(o === btn ? "chosen" : "dimmed"));
+  const kind = Mini.kind(opt), c0 = chanceOf(P, opt);
+  let mini = null;
+  if (kind && SETTINGS.mini && c0 < 1 && c0 > .08 && miniAge !== P.age && Math.random() < .5) {
+    miniAge = P.age;
+    const sc = await Mini.play(kind, btn);
+    mini = P._mini = Math.round((sc - .5) * 30) / 100;
+  }
   const chance = chanceOf(P, opt);
   const res = resolve(P, card, opt);
+  P._mini = 0;
   // бросок шанса: стрелка пробегает по шкале и останавливается в зелёной зоне или за ней
   if (chance < 1) {
     const roll = document.createElement("div");
@@ -1034,7 +1253,7 @@ async function choose(card, opt, btn) {
   btn.classList.add(res.ok ? "win" : "lose");
   const out = document.createElement("div");
   out.innerHTML = `${chance < 1 ? `<span class="stamp ${res.ok ? "ok" : "no"}">${res.ok ? (chance < .4 ? tr("ПОВЕЗЛО!", "LUCKY!") : tr("ПОЛУЧИЛОСЬ", "SUCCESS")) : tr("НЕ ВЫШЛО", "NO LUCK")}</span>` : ""}
-    ${res.text ? `<span class="result-text">${esc(res.text)}</span>` : ""}${res.changes.length ? chips(res.changes) : ""}`;
+    ${res.text ? `<span class="result-text">${esc(res.text)}</span>` : ""}${res.changes.length ? chips(res.changes) : ""}${mini ? `<span class="note">${tr("мини-игра", "mini-game")}: ${mini > 0 ? "+" : ""}${Math.round(mini * 100)}% ${tr("к шансу", "to the odds")}</span>` : ""}`;
   out.className = "stack"; out.style.gap = "6px";
   btn.appendChild(out);
   updateHud(res.changes); hudReact(res.changes);
@@ -1183,8 +1402,8 @@ async function screenEnd() {
   let chalDone = false, chalReward = 0;
   if (challenge) {
     chalDone = challenge.ok(p);
-    const done = load("lottery.challenges", []);
-    if (chalDone && !done.includes(challenge.id)) { chalReward = challenge.reward; save("lottery.challenges", done.concat(challenge.id)); save("lottery.points", load("lottery.points", 0) + chalReward); }
+    const key = mode === "weekly" ? "lottery.weeks" : "lottery.challenges", done = load(key, []);
+    if (chalDone && !done.includes(challenge.id)) { chalReward = challenge.reward; save(key, done.concat(challenge.id)); save("lottery.points", load("lottery.points", 0) + chalReward); }
   }
   // династия: род продолжается от последней прожитой жизни
   const dynPrev = load("lottery.dynasty", null);
@@ -1192,7 +1411,7 @@ async function screenEnd() {
   dyn.gen = p.gen || 1;
   dyn.line = dyn.line.concat({ n: fullName(p), c: p.home.n, a: p.age }).slice(-12);
   save("lottery.dynasty", dyn);
-  save("lottery.heirs", p.kids.length && mode !== "daily" ? heirSnapshot(p) : null);
+  save("lottery.heirs", p.kids.length && mode !== "daily" && mode !== "weekly" ? heirSnapshot(p) : null);
   // опыт: счёт жизни плюс открытия
   const xp0 = load("lottery.xp", 0);
   let gained = s + (newEnding ? 300 : 0) + (newCountry ? 100 : 0) + chalReward;
@@ -1207,19 +1426,23 @@ async function screenEnd() {
   if (window.Platform) Platform.unlock(now);
   const lives = load("lottery.lives", []);
   const best = lives.reduce((m, l) => Math.max(m, l.score), 0);
-  lives.unshift({ name: fullName(p), country: p.home.n, age: p.age, score: s, date: today(), job: p.job, cause: p.cause, mode, ending: ending.id, gen: p.gen || 1 });
+  lives.unshift({ name: fullName(p), country: p.home.n, age: p.age, score: s, date: today(), job: p.job, cause: p.cause, mode, ending: ending.id, gen: p.gen || 1, born: p.born });
   if (mode === "daily") {
     const best = load("lottery.dayBest", null);
     if (!best || best.date !== today() || s > best.score) save("lottery.dayBest", { date: today(), score: s, name: fullName(p), country: p.home.n });
   }
+  if (mode === "weekly") {
+    const best = load("lottery.weekBest", null);
+    if (!best || best.week !== challenge.week || s > best.score) save("lottery.weekBest", { week: challenge.week, score: s, name: fullName(p) });
+  }
   save("lottery.lives", lives.slice(0, 50));
   const child = p.age < 5;
-  const share = tr(`Лотерея рождения${mode === "daily" ? " · рождение дня " + today() : ""}: ${fullName(p)}, ${p.home.name}, ${years(p.age)} · «${ending.n}»${p.dream ? (p.dreamDone ? ", мечта сбылась" : ", мечта не сбылась") : ""} · ${fmt(s)} очков`,
-    `Birth Lottery${mode === "daily" ? " · daily birth " + today() : ""}: ${fullName(p)}, ${p.home.name}, ${years(p.age)} · "${ending.n}"${p.dream ? (p.dreamDone ? ", dream came true" : ", dream didn't come true") : ""} · ${fmt(s)} points`);
+  const share = tr(`Лотерея рождения${mode === "daily" ? " · рождение дня " + today() : mode === "weekly" ? " · " + challenge.n.toLowerCase() : ""}: ${fullName(p)}, ${p.home.name}, ${p.born}–${yearOf(p)} · «${ending.n}»${p.dream ? (p.dreamDone ? ", мечта сбылась" : ", мечта не сбылась") : ""} · ${fmt(s)} очков`,
+    `Birth Lottery${mode === "daily" ? " · daily birth " + today() : mode === "weekly" ? " · " + challenge.n.toLowerCase() : ""}: ${fullName(p)}, ${p.home.name}, ${p.born}–${yearOf(p)} · "${ending.n}"${p.dream ? (p.dreamDone ? ", dream came true" : ", dream didn't come true") : ""} · ${fmt(s)} points`);
   const all = [{ t: p, me: true }, ...twins.map(t => ({ t }))];
   const endCount = Object.keys(ends).length;
   app.innerHTML = `<section class="stack">
-    <span class="eyebrow fade">${p.home.name}${p.f.emigrated && !p.f.returned ? " → " + p.c.name : ""}${p.gen > 1 ? ` · ${tr("поколение", "generation")} ${p.gen}` : ""}</span>
+    <span class="eyebrow fade">${p.born}–${yearOf(p)} · ${p.home.name}${p.f.emigrated && !p.f.returned ? " → " + p.c.name : ""}${p.gen > 1 ? ` · ${tr("поколение", "generation")} ${p.gen}` : ""}</span>
     <h1 class="fade" style="--d:1">${esc(fullName(p))}</h1>
     <p class="age fade" style="--d:2">${years(p.age)}</p>
     <p class="muted fade" style="--d:3">${tr(`Причина: ${p.cause}.`, `Cause: ${p.cause}.`)} ${child ? tr(`Так случается с ${(p.home.u5 * 100).toFixed(1)} из 100 детей, родившихся в этой стране.`, `This happens to ${(p.home.u5 * 100).toFixed(1)} of every 100 children born in this country.`) : tr(`В среднем здесь живут ${p.c.le.toFixed(0)} лет.`, `Average life expectancy here is ${p.c.le.toFixed(0)}.`)}
@@ -1235,13 +1458,14 @@ async function screenEnd() {
     <div class="facts">${p.job ? `<span>${jobName(p)}</span>` : ""}${p.kids.length ? `<span>${tr(plural(p.kids.length, "ребёнок", "ребёнка", "детей"), p.kids.length + (p.kids.length === 1 ? " child" : " children"))}</span>` : ""}${p.f.trips ? `<span>${tr("путешествий", "trips")}: ${p.f.trips}</span>` : ""}</div>
     ${levelHTML(xp0)}<div class="badges" id="unl"></div>
   </section>
-  ${p.kids.length && mode !== "daily" ? `<section class="panel fade" style="--d:6"><span class="eyebrow">${tr("Продолжить род", "Continue the family")} · ${tr("поколение", "generation")} ${(p.gen || 1) + 1}</span>
+  ${p.kids.length && mode !== "daily" && mode !== "weekly" ? `<section class="panel fade" style="--d:6"><span class="eyebrow">${tr("Продолжить род", "Continue the family")} · ${tr("поколение", "generation")} ${(p.gen || 1) + 1}</span>
     <p class="note">${tr("Проживи следующую жизнь за одного из детей: та же фамилия, часть денег и, может быть, черта характера.", "Live your next life as one of your children: the same family name, some of the money and maybe a character trait.")}</p>
     <div class="row">${heirButtons(p)}</div></section>` : ""}
   <section class="panel fade" style="--d:6"><span class="eyebrow">${tr("Родившиеся в ту же секунду", "Born in the same second")}</span>
     <div class="race">${all.map(({ t, me }) => `<div class="lane ${me ? "me" : ""}"><div class="top"><span>${esc(fullName(t))}${me ? tr(" (ты)", " (you)") : ""}, ${t.home.name}${t.f.emigrated && !t.f.returned ? " → " + t.c.name : ""}</span><span>${years(t.age)}${t.dreamDone ? tr(" · мечта ✓", " · dream ✓") : ""}</span></div><div class="track"><div class="run" data-w="${Math.min(100, t.age / 105 * 100)}"></div></div></div>`).join("")}</div>
   </section>
   ${shown.length ? `<section class="panel fade" style="--d:7"><span class="eyebrow">${tr("Достижения этой жизни", "Achievements this life")}</span><div class="badges">${shown.map((id, i) => { const a = ACHIEVEMENTS.find(x => x.id === id); return `<span class="badge ${fresh.includes(id) ? "new" : "on"}" style="--i:${i}" title="${esc(a.d)}">${a.n}${fresh.includes(id) ? tr(" · новое", " · new") : ""}</span>`; }).join("")}</div></section>` : ""}
+  ${treeHTML(dyn, p)}
   ${ribbonHTML(p)}
   ${p.log.length ? `<section class="panel fade" style="--d:8"><span class="eyebrow">${tr("Биография", "Life story")}</span><ul class="log">${p.log.map(([c, s, a, evIc, rare]) => { const [cl, ic] = iconFor(c, s, evIc); return `<li class="${cl}${rare ? " rare" : ""}"><span class="ic">${ic}</span><span><span class="y">${a}</span>${esc(s)}</span></li>`; }).join("")}</ul></section>` : ""}
   <div class="row fade" style="--d:9"><button id="again" class="big pulse">${tr("Родиться снова", "Be born again")}</button><button id="copy" class="ghost">${tr("Скопировать результат", "Copy result")}</button><button id="home" class="ghost">${tr("В начало", "Home")}</button></div>
@@ -1250,7 +1474,7 @@ async function screenEnd() {
   window.Field && Field.restore();
   scrollTo(0, 0);
   bindHeirs(p);
-  document.getElementById("again").onclick = () => mode === "challenge" ? begin("challenge", { id: challenge.id }) : begin("random");
+  document.getElementById("again").onclick = () => mode === "challenge" ? begin("challenge", { id: challenge.id }) : mode === "weekly" ? begin("weekly") : begin("random");
   document.getElementById("home").onclick = () => screenStart();
   document.getElementById("copy").onclick = () => {
     const btn = document.getElementById("copy");
@@ -1267,6 +1491,16 @@ async function screenEnd() {
   await animateXP(xp0, xp0 + gained);
 }
 // лента жизни: главные моменты на шкале возраста, огонёк пробегает от рождения до конца
+// древо рода в конце жизни: предки сверху вниз, ты, дети веточками; узлы появляются по очереди
+function treeHTML(dyn, p) {
+  const line = (dyn.line || []).slice(-5), kids = p.kids.slice(0, 8);
+  if (line.length < 2 && !kids.length) return "";
+  let i = 0;
+  const node = (m, me) => `<div class="tnode ${me ? "me" : ""}" style="--i:${i++}"><b>${esc(m.n)}</b><span class="note">${esc(countryName(m.c))} · ${years(m.a)}</span></div>`;
+  const rows = line.map((m, k) => (k ? `<div class="tlink" style="--i:${i}"></div>` : "") + node(m, k === line.length - 1)).join("");
+  const kidRow = kids.length ? `<div class="tlink" style="--i:${i}"></div><div class="tkids" style="--i:${i}">${kids.map(k => `<div class="tnode kid" style="--i:${++i}"><b>${esc(k.first)}</b><span class="note">${kidLabel(k)}${p.born ? ` · ${p.born + k.born}` : ""}</span></div>`).join("")}</div>` : "";
+  return `<section class="panel fade" style="--d:7"><span class="eyebrow">${tr("Древо рода", "Family tree")} ${esc(dyn.name)}${line.length > 1 ? ` · ${tr("поколений", "generations")}: ${dyn.gen}` : ""}</span><div class="ftree">${rows}${kidRow}</div></section>`;
+}
 function ribbonHTML(p) {
   if (p.log.length < 3) return "";
   const max = Math.max(p.age, 10);
