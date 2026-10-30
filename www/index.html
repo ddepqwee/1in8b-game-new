@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Лотерея рождения</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="vendor/fonts.css">
@@ -195,6 +196,54 @@ button.danger { background: transparent; color: var(--bad); border: 1px solid va
 @media (hover: hover) and (pointer: fine) { .keys { display: inline; } }
 kbd { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); }
 
+/* ----- progression, collections ----- */
+.level { display: flex; align-items: center; gap: 12px; }
+.level .lv { flex: none; font-family: var(--display); font-weight: 800; font-size: 20px; color: var(--life); width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--life); }
+.xpbar { position: relative; height: 8px; border-radius: 99px; background: #252e4b; overflow: hidden; }
+.xpbar .fill { height: 100%; width: 0; background: linear-gradient(90deg, #7d6a4a, var(--life)); border-radius: 99px; }
+.lvup { animation: lvup .8s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes lvup { 40% { transform: scale(1.35); box-shadow: 0 0 30px rgba(242,180,90,.8); } }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tabs button { padding: 6px 12px; font-size: 13px; }
+.grid-end { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.slot-end { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 13px; display: grid; gap: 2px; align-content: start; }
+.slot-end.on { border-color: var(--life); }
+.slot-end.off b { color: var(--muted); letter-spacing: .1em; }
+.slot-end .note { font-size: 12px; }
+.meter { height: 6px; border-radius: 99px; background: #252e4b; overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--good); border-radius: 99px; }
+.chal { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 4px; text-align: left; background: var(--raised); color: var(--fg); font-weight: 500; width: 100%; box-shadow: none; }
+.chal:disabled { opacity: .5; cursor: default; }
+.chal.done { border-color: var(--good); }
+.chips.wide { font-family: var(--body); font-size: 13px; }
+/* chapter title, family tree, ending reveal */
+.chapter { display: grid; gap: 12px; justify-items: center; }
+.chapter .num { font-family: var(--mono); letter-spacing: .3em; color: var(--muted); text-transform: uppercase; animation: in .8s ease both; }
+.chapter h1 { animation: chapter 1.4s cubic-bezier(.2,.8,.2,1) both; }
+.chapter .line { width: 0; height: 2px; background: var(--life); animation: grow 1.2s .3s ease forwards; }
+@keyframes chapter { from { opacity: 0; letter-spacing: .3em; filter: blur(8px); } to { opacity: 1; letter-spacing: -.01em; filter: none; } }
+@keyframes grow { to { width: 160px; } }
+.tree { display: grid; gap: 6px; justify-items: center; }
+.tree > * { animation: in .6s ease both; animation-delay: calc(var(--i, 0) * 260ms); }
+.tree .gen { font-family: var(--display); font-weight: 600; color: var(--muted); }
+.ending { perspective: 900px; }
+.ending .card { position: relative; overflow: hidden; border: 1px solid var(--life); border-radius: 14px; padding: 20px; text-align: center; display: grid; gap: 8px; justify-items: center;
+  background: linear-gradient(160deg, rgba(242,180,90,.14), transparent 60%), var(--panel); animation: flip 1s cubic-bezier(.2,.8,.2,1) both; animation-delay: .35s; }
+.ending .card h2 { font-size: 24px; color: var(--life); }
+@keyframes flip { from { transform: rotateY(90deg) scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
+.shine { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.16) 50%, transparent 70%); background-size: 250% 100%; background-position: 150% 0; animation: shine 2.4s 1.3s ease-in-out forwards; }
+@keyframes shine { to { background-position: -100% 0; } }
+.deal { animation: deal .5s cubic-bezier(.2,.8,.2,1) both; transform-origin: 50% 0; }
+@keyframes deal { from { opacity: 0; transform: perspective(600px) rotateX(-35deg) translateY(-8px); } to { opacity: 1; transform: none; } }
+.hud.hit { animation: hit .5s ease; }
+@keyframes hit { 15% { transform: translate(-6px, 2px); } 30% { transform: translate(5px, -2px); } 45% { transform: translate(-4px, 1px); } 60% { transform: translate(3px, 0); } }
+.hud.glow { animation: glow 1.1s ease; }
+@keyframes glow { 30% { box-shadow: 0 0 40px -6px rgba(127,209,166,.6); border-color: var(--good); } }
+.avatar { display: inline-block; margin-right: 6px; }
+.avatar.grow { animation: stamp .5s cubic-bezier(.2,1.6,.4,1) both; }
+.log li.rare .ic { background: linear-gradient(135deg, #f6d29a, var(--life)); color: var(--ink); box-shadow: 0 0 14px rgba(242,180,90,.7); }
+.log li.rare > span:last-child { color: var(--life); }
+
 @media (min-width: 1100px) and (min-height: 760px) { main { zoom: 1.2; } }
 @media (min-width: 1600px) and (min-height: 1000px) { main { zoom: 1.4; } }
 @media (prefers-reduced-motion: reduce) {
@@ -217,6 +266,10 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border: 1px s
 <script src="data/names.js"></script>
 <script src="data/content.js"></script>
 <script src="data/content-world.js"></script>
+<script src="data/content-life.js"></script>
+<script src="data/content-career.js"></script>
+<script src="data/content-family.js"></script>
+<script src="data/content-meta.js"></script>
 <script src="data/names-en.js"></script>
 <script src="data/lang-en.js"></script>
 <script src="engine.js"></script>
@@ -272,6 +325,7 @@ function setMood(p) {
   const c = warm.map((w, i) => Math.round(cold[i] + (w - cold[i]) * t));
   document.documentElement.style.setProperty("--mood", c.join(", "));
   document.documentElement.style.setProperty("--mood-a", (.1 + .14 * t).toFixed(2));
+  Music.mood(j);
 }
 
 // ---------- Звук: короткие синтезированные сигналы ----------
@@ -293,16 +347,55 @@ const Sound = {
   chime() { [392, 523, 659, 784].forEach((f, i) => this.tone(f, 1.2, "sine", .05, i * .12)); },
   death() { [330, 262, 196].forEach((f, i) => this.tone(f, 1.6, "sine", .05, i * .45)); },
 };
+// Фоновая музыка: медленные аккорды из синтезатора. Тональность меняется с главой жизни, лад — с настроением.
+const Music = {
+  on: load("lottery.music", true), gain: null, timer: null, step: 0, root: 293.66, minor: false,
+  start() {
+    if (!this.on || this.timer || document.hidden) return;
+    const ctx = Sound.ensure(); if (!ctx) return;
+    if (!this.gain) { this.gain = ctx.createGain(); this.gain.gain.value = 0; this.gain.connect(ctx.destination); }
+    const gn = this.gain.gain, t = ctx.currentTime;
+    gn.cancelScheduledValues(t); gn.setValueAtTime(gn.value, t); gn.linearRampToValueAtTime(.06, t + 3);
+    this.chord(); this.timer = setInterval(() => this.chord(), 4200);
+  },
+  stop(fade = 1.5) {
+    clearInterval(this.timer); this.timer = null;
+    const ctx = Sound.ctx; if (!this.gain || !ctx) return;
+    const gn = this.gain.gain, t = ctx.currentTime;
+    gn.cancelScheduledValues(t); gn.setValueAtTime(gn.value, t); gn.linearRampToValueAtTime(0, t + fade);
+  },
+  chapter(age) { this.root = { 0: 293.66, 15: 329.63, 25: 261.63, 45: 246.94, 65: 220, 85: 196 }[age] || this.root; },
+  mood(j) { this.minor = j < 40; },
+  chord() {
+    const ctx = Sound.ctx; if (!ctx || !this.gain) return;
+    const prog = this.minor ? [[0, 3, 7], [-4, 0, 3], [3, 7, 10], [-2, 2, 5]] : [[0, 4, 7], [-5, -1, 2], [-3, 0, 4], [-7, -3, 0]];
+    const ch = prog[this.step++ % 4], t = ctx.currentTime + .05;
+    ch.forEach((s, i) => this.note(this.root / 2 * Math.pow(2, s / 12), t + i * .08, 4.8, i ? .3 : .45, "sine"));
+    if (Math.random() < .55) this.note(this.root * Math.pow(2, (ch[Math.floor(Math.random() * 3)] + 12) / 12), t + 1 + Math.random() * 2, 2.4, .14, "triangle");
+  },
+  note(f, t, dur, vol, type) {
+    const ctx = Sound.ctx, o = ctx.createOscillator(), gn = ctx.createGain();
+    o.type = type; o.frequency.value = f;
+    gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(vol, t + 1.2); gn.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(gn).connect(this.gain); o.start(t); o.stop(t + dur + .1);
+  },
+};
+// браузер разрешает звук только после первого касания
+document.addEventListener("pointerdown", () => Music.start());
+document.addEventListener("keydown", () => Music.start());
+document.addEventListener("visibilitychange", () => document.hidden ? Music.stop(.2) : Music.start());
 const settingsBox = document.getElementById("settings");
 const SETTING_ROWS = [
   ["sound", tr("Звук", "Sound"), tr("Короткие сигналы при выборе и бросках", "Short sounds for choices and rolls")],
+  ["music", tr("Музыка", "Music"), tr("Тихая фоновая музыка, меняется с главами жизни и настроением", "Quiet background music that follows life's chapters and your mood")],
   ["fast", tr("Быстрые анимации", "Fast animations"), tr("Всё то же, но в два раза быстрее", "Everything the same, twice as fast")],
   ["soft", tr("Мягкий режим", "Gentle mode"), tr("Без войн, преступлений, насилия и аварий", "No war, crime, violence or accidents")],
   ["tips", tr("Подсказки", "Hints"), tr("Объяснения правил в первых жизнях", "Rule explanations in your first lives")],
 ];
-const getSetting = k => k === "sound" ? Sound.on : SETTINGS[k];
+const getSetting = k => k === "sound" ? Sound.on : k === "music" ? Music.on : SETTINGS[k];
 function setSetting(k, v) {
   if (k === "sound") { Sound.on = v; save("lottery.sound", v); if (v) Sound.pop(); }
+  else if (k === "music") { Music.on = v; save("lottery.music", v); v ? Music.start() : Music.stop(.3); }
   else { SETTINGS[k] = v; if (k === "tips" && v) save("lottery.tipsSeen", []); saveSettings(); }
 }
 function openSettings() {
@@ -313,7 +406,7 @@ function openSettings() {
       <span class="row" style="gap:6px">${[["ru", "Русский"], ["en", "English"]].map(([l, n]) => `<button class="lang ${l === LANG ? "" : "ghost"}" data-lang="${l}" aria-pressed="${l === LANG}">${n}</button>`).join("")}</span></div>
     ${SETTING_ROWS.map(([k, n, d]) => `<div class="setting"><span><b>${n}</b><span class="note">${d}</span></span>
       <button class="switch" role="switch" data-k="${k}" aria-checked="${!!getSetting(k)}" aria-label="${n}"></button></div>`).join("")}
-    <div class="setting"><span><b>${tr("Сбросить прогресс", "Reset progress")}</b><span class="note" id="s-reset-note">${tr("Атлас, достижения и прожитые жизни", "Atlas, achievements and past lives")}</span></span>
+    <div class="setting"><span><b>${tr("Сбросить прогресс", "Reset progress")}</b><span class="note" id="s-reset-note">${tr("Атлас, достижения, уровень, итоги и прожитые жизни", "Atlas, achievements, level, endings and past lives")}</span></span>
       <button id="s-reset" class="danger">${tr("Сбросить", "Reset")}</button></div>
     <p class="note keys">${tr("Клавиши", "Keys")}: <kbd>1</kbd>–<kbd>5</kbd> ${tr("выбор", "choose")}, <kbd>Enter</kbd> ${tr("или", "or")} <kbd>${tr("Пробел", "Space")}</kbd> ${tr("дальше", "continue")}, <kbd>Esc</kbd> ${tr("настройки", "settings")}.</p>
   </section>`;
@@ -321,7 +414,8 @@ function openSettings() {
   const reset = document.getElementById("s-reset");
   reset.onclick = () => {
     if (!armed) { armed = true; reset.textContent = tr("Точно сбросить?", "Are you sure?"); document.getElementById("s-reset-note").textContent = tr("Нажми ещё раз. Отменить будет нельзя.", "Press again. This can't be undone."); return; }
-    ["lottery.lives", "lottery.atlas", "lottery.ach", "lottery.tipsSeen"].forEach(k => save(k, []));
+    ["lottery.lives", "lottery.atlas", "lottery.ach", "lottery.tipsSeen", "lottery.challenges", "lottery.rares", "lottery.dailies"].forEach(k => save(k, []));
+    save("lottery.xp", 0); save("lottery.endings", {}); save("lottery.codex", { c: [], e: [] }); save("lottery.dynasty", null); save("lottery.heirs", null); save("lottery.livesTotal", 0);
     reset.textContent = tr("Сброшено", "Reset done"); reset.disabled = true; document.getElementById("s-reset-note").textContent = tr("Прогресс очищен.", "Progress cleared.");
     if (!P) screenStart();
   };
@@ -362,20 +456,60 @@ const BONUSES = [
   { id: "money", n: tr("Стартовый капитал", "Starting savings"), d: tr("Деньги на старте +10", "Starting money +10"), cost: 250, apply: p => { p.r.m = clamp(p.r.m + 10); } },
   { id: "curious", n: tr("Любопытство", "Curiosity"), d: tr("Знания на старте +8", "Starting knowledge +8"), cost: 350, apply: p => { p.r.k = clamp(p.r.k + 8); } },
   { id: "home", n: tr("Тёплый дом", "Warm home"), d: tr("Близкие на старте +10", "Starting loved ones +10"), cost: 350, apply: p => { p.r.t = clamp(p.r.t + 10); } },
-  { id: "luck", n: tr("Удача", "Luck"), d: tr("+3% к шансам во всех решениях", "+3% to the odds in every decision"), cost: 600, apply: p => { p.bonus = { luck: .03 }; } },
+  { id: "luck", n: tr("Удача", "Luck"), d: tr("+3% к шансам во всех решениях", "+3% to the odds in every decision"), cost: 600, apply: p => { p.bonus.luck += .03; } },
+  // открываются уровнем души
+  { id: "mentor", lvl: 3, n: tr("Наставник", "Mentor"), d: tr("Знания +5 и близкие +3 на старте", "Starting knowledge +5 and loved ones +3"), cost: 450, apply: p => { p.r.k = clamp(p.r.k + 5); p.r.t = clamp(p.r.t + 3); } },
+  { id: "compass", lvl: 7, n: tr("Компас", "Compass"), d: tr("+8% к переездам, +4% к поездкам", "+8% to moving abroad, +4% to trips"), cost: 500, apply: p => { p.bonus.tags.move = (p.bonus.tags.move || 0) + .08; p.bonus.tags.rest = (p.bonus.tags.rest || 0) + .04; } },
+  { id: "heirloom", lvl: 9, n: tr("Семейная реликвия", "Family heirloom"), d: tr("Деньги +6, близкие +6, счастье +4", "Money +6, loved ones +6, happiness +4"), cost: 600, apply: p => { p.r.m = clamp(p.r.m + 6); p.r.t = clamp(p.r.t + 6); p.r.j = clamp(p.r.j + 4); } },
+  { id: "guardian", lvl: 15, n: tr("Ангел-хранитель", "Guardian angel"), d: tr("Здоровье на старте +10", "Starting health +10"), cost: 900, apply: p => { p.h0 += 10; p.r.h = clamp(p.r.h + 10); } },
+  { id: "gift", lvl: 18, n: tr("Дар", "Gift"), d: tr("+6% в учёбе, искусстве, музыке и спорте", "+6% in study, art, music and sport"), cost: 1000, apply: p => { for (const t of ["study", "art", "music", "sport"]) p.bonus.tags[t] = (p.bonus.tags[t] || 0) + .06; } },
 ];
 const THEMES = [
   { id: "night", n: tr("Ночь", "Night"), need: 0, vars: {} },
   { id: "dawn", n: tr("Рассвет", "Dawn"), need: 3, vars: { "--ink": "#1d1420", "--panel": "#2a1c2a", "--line": "#45304a", "--life": "#ff9e7a" } },
   { id: "aurora", n: tr("Северное сияние", "Aurora"), need: 8, vars: { "--ink": "#0b1a1f", "--panel": "#12282e", "--line": "#23444c", "--life": "#7fe0c0" } },
   { id: "midnight", n: tr("Полночь", "Midnight"), need: 14, vars: { "--ink": "#05060a", "--panel": "#0d0f16", "--line": "#22263a", "--life": "#c9d1ff" } },
+  { id: "sepia", n: tr("Старая фотография", "Old photograph"), lvl: 7, vars: { "--ink": "#1a1511", "--panel": "#241d17", "--raised": "#2c241c", "--line": "#3d3227", "--life": "#e0b27a", "--fg": "#efe4d6" } },
+  { id: "sakura", n: tr("Сакура", "Sakura"), lvl: 12, vars: { "--ink": "#1a1220", "--panel": "#24182b", "--raised": "#2c1e34", "--line": "#43304d", "--life": "#ffb3c7" } },
+  { id: "gold", n: tr("Золото", "Gold"), lvl: 18, vars: { "--ink": "#13110a", "--panel": "#1d1a10", "--raised": "#252114", "--line": "#3a331c", "--life": "#ffd36b" } },
+  { id: "stardust", n: tr("Звёздная пыль", "Stardust"), lvl: 25, vars: { "--ink": "#070818", "--panel": "#10122a", "--raised": "#161936", "--line": "#272b55", "--life": "#9fe8ff", "--good": "#b7f5c8" } },
 ];
 function achievementsCount() { return load("lottery.ach", []).length; }
+const themeOpen = t => t.lvl ? soulLevel() >= t.lvl : achievementsCount() >= (t.need || 0);
+
+// ---------- Уровень души: опыт за каждую жизнь открывает испытания, бонусы, темы и выбор части света ----------
+const MAX_LEVEL = 30;
+const xpFor = n => Math.round(500 * (n - 1) + 125 * (n - 1) * (n - 1)); // опыт, нужный для уровня n
+function levelOf(xp) { let n = 1; while (n < MAX_LEVEL && xp >= xpFor(n + 1)) n++; return n; }
+const soulLevel = () => levelOf(load("lottery.xp", 0));
+function levelPct(xp) { const l = levelOf(xp); return l >= MAX_LEVEL ? 100 : (xp - xpFor(l)) / (xpFor(l + 1) - xpFor(l)) * 100; }
+const slotsAt = l => 1 + (l >= 5) + (l >= 22);
+const REGION_LVL = 10;
+const UNLOCKS = [
+  ...CHALLENGES.map(c => ({ lvl: c.lvl, t: tr("Испытание", "Challenge"), n: c.n })),
+  ...BONUSES.filter(b => b.lvl).map(b => ({ lvl: b.lvl, t: tr("Бонус", "Bonus"), n: b.n })),
+  ...THEMES.filter(t => t.lvl).map(t => ({ lvl: t.lvl, t: tr("Тема", "Theme"), n: t.n })),
+  { lvl: 5, t: tr("Второй слот", "Second slot"), n: tr("два бонуса за жизнь", "two bonuses per life") },
+  { lvl: 22, t: tr("Третий слот", "Third slot"), n: tr("три бонуса за жизнь", "three bonuses per life") },
+  { lvl: REGION_LVL, t: tr("Часть света", "Region"), n: tr("выбор, где родиться", "choose where you're born") },
+  { lvl: 30, t: tr("Звание", "Title"), n: tr("Старая душа", "Old soul") },
+].sort((a, b) => a.lvl - b.lvl);
+const nextUnlock = l => UNLOCKS.find(u => u.lvl > l);
+
+// ---------- Коллекции: итоги, энциклопедия, редкие моменты ----------
+const RARE = () => EVENTS.filter(e => e.rare);
+const codexTotal = () => CARDS.length + EVENTS.filter(e => e.s).length;
+function metaNow(extra = {}) {
+  const codex = load("lottery.codex", { c: [], e: [] });
+  return { gen: 1, endings: Object.keys(load("lottery.endings", {})).length, level: soulLevel(), challenges: load("lottery.challenges", []).length,
+    lives: load("lottery.livesTotal", load("lottery.lives", []).length), dailies: load("lottery.dailies", []).length,
+    codex: (codex.c.length + codex.e.length) / codexTotal(), rares: load("lottery.rares", []).length, ...extra };
+}
 function applyTheme() {
   const t = THEMES.find(x => x.id === SETTINGS.theme) || THEMES[0];
   const st = document.documentElement.style;
   for (const x of THEMES) for (const k in x.vars) st.removeProperty(k);
-  if (achievementsCount() >= t.need) for (const k in t.vars) st.setProperty(k, t.vars[k]);
+  if (themeOpen(t)) for (const k in t.vars) st.setProperty(k, t.vars[k]);
 }
 function shopBonus(id) {
   const owned = load("lottery.owned", []), b = BONUSES.find(x => x.id === id);
@@ -385,12 +519,18 @@ function shopBonus(id) {
     save("lottery.points", pts - b.cost); save("lottery.owned", owned.concat(id));
     toast(tr("Бонус куплен", "Bonus bought"), b.n);
   }
-  save("lottery.equip", load("lottery.equip", null) === id ? null : id);
+  let eq = equipped();
+  if (eq.includes(id)) eq = eq.filter(x => x !== id);
+  else { eq.push(id); while (eq.length > slotsAt(soulLevel())) eq.shift(); }
+  save("lottery.equip", eq);
   screenStart();
 }
+// раньше был один бонус строкой, теперь список
+function equipped() { const e = load("lottery.equip", []); return Array.isArray(e) ? e : e ? [e] : []; }
 function applyBonus(p) {
-  const id = load("lottery.equip", null), b = BONUSES.find(x => x.id === id);
-  if (b && load("lottery.owned", []).includes(id)) b.apply(p);
+  p.bonus = { luck: 0, tags: {} };
+  const owned = load("lottery.owned", []);
+  for (const id of equipped().slice(0, slotsAt(soulLevel()))) { const b = BONUSES.find(x => x.id === id); if (b && owned.includes(id)) b.apply(p); }
 }
 
 // ---------- Подсказки для первых жизней ----------
@@ -424,7 +564,7 @@ document.addEventListener("keydown", e => {
 });
 
 // ---------- Состояние ----------
-let P = null, twins = [], mode = "random", queue = [], used = [], extraLeft = 1, toasted = new Set();
+let P = null, twins = [], mode = "random", queue = [], used = [], extraLeft = 1, toasted = new Set(), challenge = null;
 
 function chips(eff, odds) {
   const list = (Array.isArray(eff) ? eff : Object.entries(eff || {})).map(([k, v]) => `<span class="chip ${v > 0 ? "up" : "down"}">${v > 0 ? "+" : ""}${v} ${resName[k].toLowerCase()}</span>`);
@@ -449,7 +589,7 @@ function renderGame() {
     <div class="row between">
       <div class="stack" style="gap:4px;min-width:0">
         <span class="eyebrow" id="h-country"></span>
-        <span class="who">${esc(fullName(p))}</span>
+        <span class="who"><span class="avatar" id="h-ava" aria-hidden="true"></span>${esc(fullName(p))}</span>
         <div class="age" id="h-age">${years(p.age)}</div>
       </div>
       <div class="stack" id="h-dream" style="gap:2px;text-align:right;max-width:50%"></div>
@@ -467,7 +607,9 @@ function updateHud(changes = []) {
   document.getElementById("h-country").textContent = p.c.name + (p.f.emigrated && !p.f.returned ? tr(" · родина: ", " · born in ") + p.home.name : "");
   document.getElementById("h-dream").innerHTML = p.dream ? `<span class="eyebrow">${tr("Мечта", "Dream")}</span><span class="dream ${p.dreamDone ? "done" : ""}">${p.dreamDone ? "✓ " : ""}${p.dream.t}</span><span class="note">${p.dream.d}</span>` : "";
   const fam = familyLine(p), job = jobLine(p);
-  document.getElementById("h-facts").innerHTML = `${job ? `<span>${job}</span>` : ""}${fam ? `<span>${esc(fam)}</span>` : ""}`;
+  document.getElementById("h-facts").innerHTML = `${job ? `<span>${job}</span>` : ""}${fam ? `<span>${esc(fam)}</span>` : ""}${challenge ? `<span>${tr("цель", "goal")}: ${esc(challenge.goal.toLowerCase())}${challenge.ok(p) ? " ✓" : ""}</span>` : ""}`;
+  const ava = document.getElementById("h-ava"), face = avatar(p);
+  if (ava.textContent !== face) { ava.textContent = face; ava.classList.remove("grow"); void ava.offsetWidth; ava.classList.add("grow"); }
   const pos = Math.min(100, p.age / TL_MAX * 100) + "%";
   document.getElementById("h-lived").style.width = pos;
   document.getElementById("h-me").style.left = pos;
@@ -488,6 +630,17 @@ function updateHud(changes = []) {
   }
   setMood(p);
 }
+function avatar(p) {
+  const a = p.age, f = p.sex === "f";
+  return a < 3 ? "👶" : a < 13 ? (f ? "👧" : "👦") : a < 25 ? "🧑" : a < 60 ? (f ? "👩" : "👨") : (f ? "👵" : "👴");
+}
+// встряска или свечение HUD после больших перемен
+function hudReact(changes) {
+  const sum = changes.reduce((s, [, v]) => s + v, 0), hud = document.getElementById("hud");
+  if (!hud || REDUCE) return;
+  const cls = sum <= -14 ? "hit" : sum >= 16 ? "glow" : null;
+  if (cls) { hud.classList.remove("hit", "glow"); void hud.offsetWidth; hud.classList.add(cls); }
+}
 async function tickAge(from, to) {
   const el = document.getElementById("h-age");
   for (let a = from + 1; a <= to; a++) {
@@ -501,9 +654,48 @@ async function tickAge(from, to) {
 const stage = () => document.getElementById("stage");
 
 // ---------- Экраны ----------
+let colTab = "ach";
+function levelHTML(xp) {
+  const l = levelOf(xp), nx = nextUnlock(l);
+  return `<div class="level"><span class="lv" id="lv">${l}</span><div class="stack" style="gap:4px;flex:1;min-width:0">
+    <div class="row between" style="align-items:center"><span class="eyebrow">${tr("Уровень души", "Soul level")}</span><span class="note" id="xpn">${l >= MAX_LEVEL ? tr("максимум", "max") : `${fmt(xp - xpFor(l))} / ${fmt(xpFor(l + 1) - xpFor(l))}`}</span></div>
+    <div class="xpbar"><div class="fill" id="xpf" style="width:${levelPct(xp)}%"></div></div>
+    ${nx ? `<span class="note">${tr("Уровень", "Level")} ${nx.lvl}: ${esc(nx.t)} · ${esc(nx.n)}</span>` : ""}</div></div>`;
+}
+function collectionsHTML() {
+  const got = load("lottery.ach", []), atlas = load("lottery.atlas", []), ends = load("lottery.endings", {}), codex = load("lottery.codex", { c: [], e: [] }), rares = load("lottery.rares", []);
+  const tabs = [["ach", tr("Достижения", "Achievements"), `${got.length}/${ACHIEVEMENTS.length}`], ["end", tr("Книга судеб", "Book of fates"), `${Object.keys(ends).length}/${ENDINGS.length}`],
+    ["codex", tr("Энциклопедия", "Codex"), `${Math.round((codex.c.length + codex.e.length) / codexTotal() * 100)}%`], ["atlas", tr("Атлас", "Atlas"), `${atlas.length}/${COUNTRIES.length}`]];
+  let body = "";
+  if (colTab === "ach") body = `<div class="badges">${ACHIEVEMENTS.map(a => `<span class="badge ${got.includes(a.id) ? "on" : ""}" title="${esc(a.d)}">${a.n}</span>`).join("")}</div><p class="note">${tr("Наведи или нажми на достижение, чтобы увидеть условие.", "Hover or tap an achievement to see how to get it.")}</p>`;
+  if (colTab === "end") body = `<p class="note">${tr("Каждая жизнь заканчивается итогом. Закрытые итоги подсказывают, что для них нужно.", "Every life ends with an ending. Locked ones hint at what they need.")}</p>
+    <div class="grid-end">${ENDINGS.map(e => ends[e.id] ? `<div class="slot-end on"><b>${esc(e.n)}</b><span class="note">×${ends[e.id]}</span></div>` : `<div class="slot-end off"><b>???</b><span class="note">${esc(e.hint)}</span></div>`).join("")}</div>`;
+  if (colTab === "codex") {
+    const pc = codex.c.length / CARDS.length * 100, pe = codex.e.length / EVENTS.filter(e => e.s).length * 100;
+    body = `<div class="stack" style="gap:6px"><div class="row between"><span>${tr("Карточки решений", "Decision cards")}</span><span class="note">${codex.c.length} / ${CARDS.length}</span></div><div class="meter"><i style="width:${pc}%"></i></div>
+      <div class="row between"><span>${tr("События", "Events")}</span><span class="note">${codex.e.length} / ${EVENTS.filter(e => e.s).length}</span></div><div class="meter"><i style="width:${pe}%"></i></div></div>
+      <span class="eyebrow">${tr("Редкие моменты", "Rare moments")} · ${rares.length}/${RARE().length}</span>
+      <ul class="log">${RARE().map(e => rares.includes(e.id) ? `<li class="rare"><span class="ic">${e.ic || "★"}</span><span>${esc(txt(e.s, P || {}))}</span></li>` : `<li><span class="ic">?</span><span class="muted">${tr("Ещё не встречалось", "Not seen yet")}</span></li>`).join("")}</ul>`;
+  }
+  if (colTab === "atlas") body = `<p class="note">${atlas.length ? atlas.map(n => esc(countryName(n))).join(" · ") : tr("Здесь появятся страны, в которых ты рождался.", "Countries you were born in will appear here.")}</p>`;
+  return `<div class="tabs" role="tablist">${tabs.map(([id, n, c]) => `<button class="${colTab === id ? "" : "ghost"}" data-tab="${id}" role="tab" aria-selected="${colTab === id}">${n} · ${c}</button>`).join("")}</div>${body}`;
+}
+function bindCollections() {
+  const box = document.getElementById("collections");
+  box.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { colTab = b.dataset.tab; box.innerHTML = collectionsHTML(); bindCollections(); });
+}
+// снимок родителя, чтобы продолжить род даже после перезапуска игры
+function heirSnapshot(p) { return { cn: p.c.n, r: p.r, peak: p.peak, fam: p.fam, partner: p.partner, traits: p.traits, kids: p.kids, sex: p.sex, first: p.first, last: p.last, order: p.order, f: { house: !!p.f.house }, gen: p.gen || 1 }; }
+function fromSnapshot(s) { return { ...s, c: COUNTRIES.find(c => c.n === s.cn) || COUNTRIES[0] }; }
+const kidLabel = k => tr(k.sex === "f" ? "дочь" : "сын", k.sex === "f" ? "daughter" : "son");
+function heirButtons(parent) { return parent.kids.slice(0, 8).map((k, i) => `<button class="ghost heir" data-k="${i}">${esc(k.first)} · ${kidLabel(k)}</button>`).join(""); }
+function bindHeirs(parent) { app.querySelectorAll("button.heir").forEach(b => b.onclick = () => begin("random", { heir: parent.kids[+b.dataset.k], parent, gen: (parent.gen || 1) + 1 })); }
+
 function screenStart() {
-  document.body.classList.remove("dim"); setMood(null);
-  const lives = load("lottery.lives", []), atlas = load("lottery.atlas", []), got = load("lottery.ach", []);
+  document.body.classList.remove("dim"); setMood(null); P = null;
+  const lives = load("lottery.lives", []), xp = load("lottery.xp", 0), lvl = levelOf(xp);
+  const snap = load("lottery.heirs", null), dyn = load("lottery.dynasty", null);
+  const parent = snap && fromSnapshot(snap);
   app.innerHTML = `<section class="stack" style="gap:18px">
     <span class="eyebrow fade">${tr("Каждую секунду рождается около 4 детей", "About 4 babies are born every second")}</span>
     <h1 class="fade" style="--d:1">${tr("Лотерея <em>рождения</em>", "Birth <em>Lottery</em>")}</h1>
@@ -511,54 +703,117 @@ function screenStart() {
     <div class="row fade" style="--d:3">
       <button id="b-random" class="big pulse">${tr("Родиться", "Be born")}</button>
       <button id="b-daily" class="ghost">${tr("Рождение дня", "Daily birth")} · ${tr(today().split("-").reverse().slice(0, 2).join("."), today().slice(5).replace("-", "/"))}</button>
+      <button id="b-chal" class="ghost" ${lvl >= 2 ? "" : "disabled style=\"opacity:.5\""}>${tr("Испытания", "Challenges")}${lvl >= 2 ? "" : ` · ${tr("уровень", "level")} 2`}</button>
       ${window.Platform && Platform.desktop ? `<button id="b-quit" class="ghost">${tr("Выйти", "Quit")}</button>` : ""}
     </div>
+    ${lvl >= REGION_LVL ? `<div class="row fade" style="--d:3;gap:6px;align-items:center"><span class="note">${tr("Где родиться:", "Where to be born:")}</span>${[[null, tr("где угодно", "anywhere")], ...[...new Set(COUNTRIES.map(c => c.part))].map(x => [x, COUNTRIES.find(c => c.part === x).partName])].map(([id, n]) => `<button class="lang region ${(SETTINGS.region || null) === id ? "" : "ghost"}" data-region="${id || ""}">${esc(n)}</button>`).join("")}</div>` : ""}
   </section>
-  <section class="panel fade" style="--d:4">
-    <div class="row between"><span class="eyebrow">${tr("Атлас рождений", "Birth atlas")}</span><span class="note">${atlas.length} ${tr("из", "of")} ${COUNTRIES.length} ${tr("стран", "countries")}</span></div>
-    <p class="note">${atlas.length ? atlas.slice(0, 40).map(n => esc(countryName(n))).join(" · ") + (atlas.length > 40 ? " …" : "") : tr("Здесь появятся страны, в которых ты рождался.", "Countries you were born in will appear here.")}</p>
-  </section>
-  <section class="panel fade" style="--d:5">
-    <div class="row between"><span class="eyebrow">${tr("Достижения", "Achievements")}</span><span class="note">${got.length} ${tr("из", "of")} ${ACHIEVEMENTS.length}</span></div>
-    <div class="badges">${ACHIEVEMENTS.map(a => `<span class="badge ${got.includes(a.id) ? "on" : ""}" title="${esc(a.d)}">${a.n}</span>`).join("")}</div>
-  </section>
-  ${lives.length ? `<section class="panel fade" style="--d:6"><span class="eyebrow">${tr("Прожитые жизни", "Past lives")}</span><ul class="list">${lives.slice(0, 8).map(l => `<li><span>${esc(l.name)}, ${esc(countryName(l.country))}</span><span>${years(l.age)} · ${fmt(l.score)}</span></li>`).join("")}</ul></section>` : ""}
+  <section class="panel fade" style="--d:4">${levelHTML(xp)}</section>
+  ${parent && parent.kids.length ? `<section class="panel fade" style="--d:4"><span class="eyebrow">${tr("Род", "Family")} ${esc(dyn ? dyn.name : parent.last)} · ${tr("поколение", "generation")} ${(parent.gen || 1) + 1}</span>
+    ${dyn && dyn.line && dyn.line.length ? `<p class="note">${dyn.line.slice(-4).map(m => `${esc(m.n)} (${m.a})`).join(" → ")}</p>` : ""}
+    <p class="note">${tr("Проживи следующую жизнь за одного из детей. Фамилия, часть денег и, может быть, черта характера перейдут по наследству.", "Live your next life as one of your children. The family name, some of the money and maybe a character trait carry over.")}</p>
+    <div class="row">${heirButtons(parent)}</div></section>` : ""}
+  <section class="panel fade" style="--d:5" id="collections">${collectionsHTML()}</section>
+  ${lives.length ? `<section class="panel fade" style="--d:6"><span class="eyebrow">${tr("Прожитые жизни", "Past lives")}</span><ul class="list">${lives.slice(0, 8).map(l => `<li><span>${esc(l.name)}, ${esc(countryName(l.country))}${l.ending ? ` · <span class="muted">${esc((ENDINGS.find(e => e.id === l.ending) || {}).n || "")}</span>` : ""}</span><span>${years(l.age)} · ${fmt(l.score)}</span></li>`).join("")}</ul></section>` : ""}
   ${diaryHTML(lives)}
   <section class="panel fade" style="--d:7">
     <div class="row between"><span class="eyebrow">${tr("Очки", "Points")}</span><span class="score" style="font-size:28px">${fmt(load("lottery.points", 0))}</span></div>
-    <p class="note">${tr("За каждую жизнь начисляются очки по счёту. На них покупаются бонусы. Перед рождением можно взять один купленный бонус. Бонусы работают только в обычной игре, не в «Рождении дня».", "Each life adds its score to your points. Spend them on bonuses. Before you're born you can take one bought bonus. Bonuses apply only to the random game, not the daily birth.")}</p>
+    <p class="note">${tr(`За каждую жизнь начисляются очки по счёту. На них покупаются бонусы. Перед рождением можно взять купленные бонусы: сейчас ${slotsAt(lvl)} из 3 слотов, остальные открывает уровень души. Бонусы работают только в обычной игре.`, `Each life adds its score to your points. Spend them on bonuses. Before you're born you can take bought bonuses: ${slotsAt(lvl)} of 3 slots open now, soul levels unlock the rest. Bonuses apply only to the regular game.`)}</p>
     <div class="stack" style="gap:8px">${BONUSES.map(b => {
-      const owned = load("lottery.owned", []).includes(b.id), on = load("lottery.equip", null) === b.id;
+      const owned = load("lottery.owned", []).includes(b.id), on = equipped().includes(b.id), locked = b.lvl && lvl < b.lvl;
       return `<div class="row between" style="align-items:center"><span><b>${b.n}</b><span class="note" style="display:block">${b.d}</span></span>
-        <button class="shop ${owned && on ? "" : "ghost"}" data-bonus="${b.id}">${owned ? (on ? tr("Выбрано", "Selected") : tr("Выбрать", "Select")) : `${tr("Купить", "Buy")} · ${fmt(b.cost)}`}</button></div>`;
+        ${locked ? `<span class="note">${tr("уровень", "level")} ${b.lvl}</span>` : `<button class="shop ${owned && on ? "" : "ghost"}" data-bonus="${b.id}">${owned ? (on ? tr("Выбрано", "Selected") : tr("Выбрать", "Select")) : `${tr("Купить", "Buy")} · ${fmt(b.cost)}`}</button>`}</div>`;
     }).join("")}</div>
   </section>
   <section class="panel fade" style="--d:8">
     <span class="eyebrow">${tr("Темы", "Themes")}</span>
     <div class="row" style="gap:8px">${THEMES.map(t => {
-      const got = achievementsCount() >= t.need;
-      return `<button class="shop ${SETTINGS.theme === t.id || (!SETTINGS.theme && t.id === "night") ? "" : "ghost"}" data-theme="${t.id}" ${got ? "" : "disabled"} style="${got ? "" : "opacity:.5"}">${t.n}${got ? "" : ` · ${tr("после", "after")} ${t.need} ${tr("достижений", "achievements")}`}</button>`;
+      const got = themeOpen(t);
+      return `<button class="shop ${SETTINGS.theme === t.id || (!SETTINGS.theme && t.id === "night") ? "" : "ghost"}" data-theme="${t.id}" ${got ? "" : "disabled"} style="${got ? "" : "opacity:.5"}">${t.n}${got ? "" : t.lvl ? ` · ${tr("уровень", "level")} ${t.lvl}` : ` · ${tr("после", "after")} ${t.need} ${tr("достижений", "achievements")}`}</button>`;
     }).join("")}</div>
   </section>
   <p class="note">${tr("Данные: ООН, ВОЗ, Всемирный банк. Смерть и болезни случаются с реальной частотой, но без подробностей. Нажми на экран, чтобы ускорить анимацию.", "Data: UN, WHO, World Bank. Death and illness happen at real-world rates, but never in detail. Tap the screen to speed up animations.")}</p>`;
   document.getElementById("b-random").onclick = () => begin("random");
   document.getElementById("b-daily").onclick = () => begin("daily");
+  document.getElementById("b-chal").onclick = () => screenChallenges();
+  bindCollections();
+  if (parent) bindHeirs(parent);
+  app.querySelectorAll("button.region").forEach(b => b.onclick = () => { SETTINGS.region = b.dataset.region || null; saveSettings(); screenStart(); });
   app.querySelectorAll("button.shop[data-bonus]").forEach(b => b.onclick = () => shopBonus(b.dataset.bonus));
   app.querySelectorAll("button.shop[data-theme]").forEach(b => b.onclick = () => { SETTINGS.theme = b.dataset.theme; saveSettings(); applyTheme(); screenStart(); });
   const q = document.getElementById("b-quit"); if (q) q.onclick = () => Platform.quit();
   scrollTo(0, 0);
 }
 
-async function begin(m) {
-  mode = m; toasted = new Set();
+function screenChallenges() {
+  const lvl = soulLevel(), done = load("lottery.challenges", []);
+  app.innerHTML = `<section class="stack">
+    <span class="eyebrow fade">${tr("Испытания", "Challenges")} · ${done.length}/${CHALLENGES.length}</span>
+    <h1 class="fade" style="--d:1">${tr("Другие правила", "Different rules")}</h1>
+    <p class="muted fade" style="--d:2">${tr("Каждое испытание меняет старт и ставит цель на всю жизнь. Бонусы не действуют. За первое прохождение дают очки и много опыта.", "Each challenge changes your start and sets a goal for the whole life. Bonuses don't apply. Your first clear earns points and lots of experience.")}</p>
+  </section>
+  <section class="stack fade" style="--d:3;gap:10px">${CHALLENGES.map(c => `<button class="chal ${done.includes(c.id) ? "done" : ""}" data-c="${c.id}" ${lvl >= c.lvl ? "" : "disabled"}>
+    <span class="row between" style="align-items:baseline"><b>${done.includes(c.id) ? "✓ " : ""}${esc(c.n)}</b><span class="note">${lvl >= c.lvl ? `+${fmt(c.reward)} ${tr("очков", "points")}` : `${tr("уровень", "level")} ${c.lvl}`}</span></span>
+    <span class="note">${esc(c.d)}</span><span>${tr("Цель", "Goal")}: ${esc(c.goal)}</span></button>`).join("")}</section>
+  <div class="row fade" style="--d:4"><button id="back" class="ghost">${tr("Назад", "Back")}</button></div>`;
+  app.querySelectorAll("button.chal").forEach(b => b.onclick = () => begin("challenge", { id: b.dataset.c }));
+  document.getElementById("back").onclick = () => screenStart();
+  scrollTo(0, 0);
+}
+
+async function begin(m, opt = {}) {
+  mode = m; toasted = new Set(); challenge = null;
   document.body.classList.remove("dim");
   setSeed(m === "daily" ? "day-" + today() : null);
-  window.UNLOCKED = m === "random" ? load("lottery.ach", []) : [];
-  P = newPerson();
+  window.UNLOCKED = m === "daily" ? [] : load("lottery.ach", []);
+  if (m === "challenge") {
+    challenge = CHALLENGES.find(c => c.id === opt.id);
+    P = newPerson(challenge.country ? weighted(COUNTRIES.filter(challenge.country), x => x.b) : undefined);
+    if (challenge.setup) challenge.setup(P);
+  } else if (opt.heir) {
+    P = newHeir(opt.parent, opt.heir);
+  } else {
+    const region = m === "random" && soulLevel() >= REGION_LVL && SETTINGS.region;
+    P = newPerson(region ? weighted(COUNTRIES.filter(c => c.part === region), x => x.b) : undefined);
+  }
+  P.gen = opt.gen || 1;
   if (m === "random") applyBonus(P);
   twins = [0, 1, 2, 3].map(() => newPerson());
-  await roulette(P);
+  if (opt.heir) await familyTree(P); else await roulette(P);
   screenBirth();
+}
+
+// продолжение рода: короткое родословное древо вместо рулетки стран
+async function familyTree(p) {
+  skipping = false;
+  const dyn = load("lottery.dynasty", null), line = dyn && dyn.line ? dyn.line.slice(-3) : [];
+  overlay.innerHTML = `<div class="roulette"><span class="eyebrow">${tr("Род", "Family")} ${esc(dyn ? dyn.name : p.last)} · ${tr("поколение", "generation")} ${p.gen}</span>
+    <div class="tree">${line.map((m, i) => `<span class="gen" style="--i:${i}">${esc(m.n)} · ${years(m.a)}</span><span class="muted" style="--i:${i}">↓</span>`).join("")}
+    <span class="slot final" style="--i:${line.length}">${esc(fullName(p))}</span></div>
+    <div class="odds">${esc(p.c.name)}</div></div>`;
+  overlay.classList.add("show");
+  Sound.ensure(); Sound.chime(); window.Field && Field.burst();
+  await sleep(2400 + line.length * 260);
+  overlay.classList.remove("show");
+  await sleep(250);
+}
+
+// главы жизни: короткая заставка на весь экран
+const CHAPTERS = {
+  0: [tr("Глава I", "Chapter I"), tr("Детство", "Childhood")], 15: [tr("Глава II", "Chapter II"), tr("Юность", "Youth")],
+  25: [tr("Глава III", "Chapter III"), tr("Взрослая жизнь", "Adulthood")], 45: [tr("Глава IV", "Chapter IV"), tr("Зрелость", "Midlife")],
+  65: [tr("Глава V", "Chapter V"), tr("Старость", "Old age")], 85: [tr("Глава VI", "Chapter VI"), tr("Долгий вечер", "The long evening")],
+};
+async function chapter(age) {
+  const c = CHAPTERS[age]; if (!c) return;
+  Music.chapter(age);
+  skipping = false;
+  overlay.innerHTML = `<div class="chapter"><span class="num">${c[0]}</span><h1>${c[1]}</h1><div class="line"></div></div>`;
+  overlay.classList.add("show"); Sound.chime();
+  await sleep(1700);
+  overlay.classList.remove("show");
+  await sleep(300);
+  skipping = false;
 }
 
 // рулетка: страны мелькают с частотой реальных рождений и замедляются на твоей
@@ -596,10 +851,12 @@ async function screenBirth() {
   skipping = false;
   setMood(p);
   app.innerHTML = `<section class="stack">
-    <span class="eyebrow fade">${mode === "daily" ? tr("Рождение дня", "Daily birth") : tr("Только что", "Just now")} · ${tr(g(p, "мальчик", "девочка"), g(p, "boy", "girl"))}</span>
+    <span class="eyebrow fade">${mode === "daily" ? tr("Рождение дня", "Daily birth") : mode === "challenge" ? tr("Испытание", "Challenge") + ": " + esc(challenge.n) : p.gen > 1 ? tr("Поколение ", "Generation ") + p.gen : tr("Только что", "Just now")} · ${tr(g(p, "мальчик", "девочка"), g(p, "boy", "girl"))}</span>
     <h1 id="b-name">&nbsp;</h1>
     <p class="muted fade" style="--d:2">${c.name}, ${c.partName}. ${tr(`Шанс родиться здесь: 1 из ${fmt(c.odds)}. Семья ${QUINTILE[p.q]} по меркам страны.`, `Odds of being born here: 1 in ${fmt(c.odds)}. A ${QUINTILE[p.q]} family by local standards.`)}</p>
   </section>
+  ${challenge ? `<section class="tip fade" style="--d:3"><span class="eyebrow">${esc(challenge.n)}</span><span>${esc(challenge.d)}. ${tr("Цель", "Goal")}: ${esc(challenge.goal)}.</span></section>` : ""}
+  ${p.heirOf ? `<section class="tip fade" style="--d:3"><span class="eyebrow">${tr("Наследство", "Inheritance")}</span><span>${tr(`Ты ${g(p, "сын", "дочь")} ${esc(p.heirOf)}. Фамилия, достаток семьи и характер отчасти достались от родителей.`, `You're the ${g(p, "son", "daughter")} of ${esc(p.heirOf)}. The family name, wealth and some of your character came from your parents.`)}</span></section>` : ""}
   <section class="panel fade" style="--d:4">
     <span class="eyebrow">${tr("Семья", "Family")}</span>
     <ul class="list">
@@ -621,13 +878,14 @@ async function screenBirth() {
   </section>
   <div class="row fade" style="--d:10"><button id="go" class="big pulse">${tr("Начать жизнь", "Start life")}</button></div>`;
   scrollTo(0, 0);
-  document.getElementById("go").onclick = () => { renderGame(); finishStage(); };
+  document.getElementById("go").onclick = () => { renderGame(); nextStage(); };
   tip("birth", tr("Как устроена игра", "How it works"), tr("Страна, семья и характер выпали по реальной статистике. Ты проживёшь жизнь этапами по пять лет. Чем труднее старт, тем выше множитель очков.", "Your country, family and character were drawn from real statistics. You'll live your life in five-year stages. The harder your start, the higher your score multiplier."), app.querySelector(".panel"));
   await typeInto(document.getElementById("b-name"), fullName(p));
 }
 
-function nextStage() {
+async function nextStage() {
   used = []; extraLeft = 1; skipping = false;
+  await chapter(P.age);
   if (P.age === 15 && !P.dream) return screenDream();
   if (P.age < 10) { P.focus = null; queue = cardsFor(P); return playCard(); }
   screenFocus();
@@ -673,7 +931,7 @@ function playCard() {
   if (!card) return finishStage();
   used.push(card.id);
   const opts = optionsOf(P, card);
-  stage().innerHTML = `<span class="eyebrow enter">${card.t}</span><h2 class="enter" style="--i:1">${esc(txt(card.q, P))}</h2>
+  stage().innerHTML = `<span class="eyebrow enter">${card.t}</span><h2 class="deal">${esc(txt(card.q, P))}</h2>
   ${opts.map((o, i) => `<button class="option enter" style="--i:${i + 2}" data-i="${i}"><b>${esc(o.l)}</b>${chips(o.yes, chanceOf(P, o))}</button>`).join("")}`;
   Sound.pop();
   if (opts.some(o => chanceOf(P, o) < 1)) tip("chance", tr("Шансы", "Odds"), tr("Процент рядом с вариантом показывает шанс на успех. Он зависит от страны, семьи, характера и твоих шкал. Зелёные цифры ты получишь при успехе.", "The percentage next to an option is your chance of success. It depends on your country, family, character and bars. The green numbers are what you get if it works."), stage());
@@ -705,8 +963,8 @@ async function choose(card, opt, btn) {
     ${res.text ? `<span class="result-text">${esc(res.text)}</span>` : ""}${res.changes.length ? chips(res.changes) : ""}`;
   out.className = "stack"; out.style.gap = "6px";
   btn.appendChild(out);
-  updateHud(res.changes);
-  if (chance >= 1) Sound.pop(); else if (res.ok) { chance < .4 ? Sound.great() : Sound.good(); if (chance < .4) burst({ particleCount: 70 }); buzz("success"); } else { Sound.bad(); buzz("fail"); }
+  updateHud(res.changes); hudReact(res.changes);
+  if (res.ok && opt.fx) { celebrate(opt.fx); Sound.great(); } else if (chance >= 1) Sound.pop(); else if (res.ok) { chance < .4 ? Sound.great() : Sound.good(); if (chance < .4) burst({ particleCount: 70 }); buzz("success"); } else { Sound.bad(); buzz("fail"); }
   const hint = document.createElement("p"); hint.className = "hint"; hint.textContent = tr("Нажми, чтобы продолжить", "Tap to continue");
   stage().appendChild(hint);
   skipping = false;
@@ -716,9 +974,20 @@ async function choose(card, opt, btn) {
   playCard();
 }
 
+// праздничные моменты: свадьба, ребёнок, диплом, дом, слава
+const FX = { love: "💍", baby: "👶", grad: "🎓", home: "🏠", star: "⭐", gold: "🏅" };
+function celebrate(kind) {
+  if (REDUCE || typeof confetti !== "function") return;
+  try {
+    const shapes = confetti.shapeFromText ? [confetti.shapeFromText({ text: FX[kind] || "✨", scalar: 2.2 })] : undefined;
+    confetti({ particleCount: 36, spread: 100, startVelocity: 32, gravity: .8, ticks: 180, origin: { y: .45 }, scalar: 2.2, shapes, flat: true, disableForReducedMotion: true });
+  } catch (e) {}
+  burst({ particleCount: 50, spread: 80 });
+}
 const DREAM_RE = /Мечта сбылась|Dream come true/;
-function iconFor(cls, s) {
+function iconFor(cls, s, ic) {
   if (DREAM_RE.test(s)) return ["star", "★"];
+  if (ic) return [cls, ic];
   if (/Переезд|Поездка|Возвращение|Moved to|Went to|Back home/.test(s)) return [cls, "✈"];
   if (/Родил|появил|внук|is born|joins the family|grandchild/i.test(s)) return [cls, "✿"];
   if (/вместе|Свадьба|рядом|together now|by your side/.test(s)) return [cls, "♥"];
@@ -735,11 +1004,16 @@ async function finishStage() {
   stage().innerHTML = `<span class="eyebrow">${from}–${P.alive ? P.age - 1 : P.age}</span><h2>${P.alive ? tr("Проходят годы…", "The years go by…") : tr("Последние годы", "The final years")}</h2>`;
   await tickAge(from, to);
   const changes = RES.map(([k]) => [k, P.r[k] - before[k]]).filter(([, v]) => v);
-  updateHud(changes);
+  updateHud(changes); hudReact(changes);
   const items = P.log.slice(logStart);
   stage().innerHTML = `<div class="panel"><span class="eyebrow">${from}–${P.alive ? P.age - 1 : P.age}</span>
-    <ul class="log">${items.length ? items.map(([c, s], i) => { const [cl, ic] = iconFor(c, s); return `<li class="${cl} pop" style="--i:${i}"><span class="ic">${ic}</span><span>${esc(s)}</span></li>`; }).join("") : `<li class="pop"><span class="ic">·</span><span>${tr("Обычные годы, без больших перемен.", "Ordinary years, nothing big changed.")}</span></li>`}</ul></div>`;
-  items.forEach(([c, s], i) => setTimeout(() => { if (DREAM_RE.test(s)) { Sound.great(); burst({ particleCount: 140, spread: 100 }); toast(tr("Мечта сбылась!", "Dream come true!"), P.dream.t); } else c === "down" ? Sound.tone(260, .12, "triangle", .04) : Sound.tone(660, .1, "triangle", .04); }, REDUCE ? 0 : i * 380));
+    <ul class="log">${items.length ? items.map(([c, s, , evIc, rare], i) => { const [cl, ic] = iconFor(c, s, evIc); return `<li class="${cl}${rare ? " rare" : ""} pop" style="--i:${i}"><span class="ic">${ic}</span><span>${esc(s)}</span></li>`; }).join("") : `<li class="pop"><span class="ic">·</span><span>${tr("Обычные годы, без больших перемен.", "Ordinary years, nothing big changed.")}</span></li>`}</ul></div>`;
+  const seenRare = load("lottery.rares", []);
+  items.forEach(([c, s, , , rare], i) => setTimeout(() => {
+    if (DREAM_RE.test(s)) { Sound.great(); burst({ particleCount: 140, spread: 100 }); toast(tr("Мечта сбылась!", "Dream come true!"), P.dream.t); }
+    else if (rare) { Sound.chime(); burst({ particleCount: 50, colors: ["#f6d29a", "#f2b45a", "#ffffff"] }); toast(tr("Редкий момент", "A rare moment"), seenRare.length ? "" : tr("Он попадёт в энциклопедию", "It goes into your codex")); }
+    else c === "down" ? Sound.tone(260, .12, "triangle", .04) : Sound.tone(660, .1, "triangle", .04);
+  }, REDUCE ? 0 : i * 380));
   achievementToasts();
   await sleep(items.length * 380 + 300);
   if (!P.alive) { await sleep(900); return farewell(); }
@@ -751,7 +1025,7 @@ async function finishStage() {
 
 function achievementToasts() {
   const atlas = load("lottery.atlas", []), got = load("lottery.ach", []);
-  for (const id of achievementsOf(P, atlas)) {
+  for (const id of achievementsOf(P, atlas, metaNow({ gen: P.gen || 1 }))) {
     if (got.includes(id) || toasted.has(id)) continue;
     toasted.add(id);
     const a = ACHIEVEMENTS.find(x => x.id === id);
@@ -764,7 +1038,7 @@ async function farewell() {
   skipping = false;
   document.body.classList.add("dim");
   window.Field && Field.fade();
-  Sound.death(); buzz("heavy");
+  Sound.death(); buzz("heavy"); Music.stop(2.5);
   overlay.innerHTML = `<div class="farewell"><div class="candle"></div><h2>${esc(fullName(P))}</h2><p class="age">${years(P.age)}</p><p class="muted">${esc(P.cause[0].toUpperCase() + P.cause.slice(1))}.</p></div>`;
   overlay.classList.add("show");
   await sleep(3600);
@@ -780,59 +1054,126 @@ async function screenEnd() {
   const s = score(p);
   save("lottery.points", load("lottery.points", 0) + s);
   const atlas = load("lottery.atlas", []);
-  if (!atlas.includes(p.home.n)) atlas.unshift(p.home.n);
+  const newCountry = !atlas.includes(p.home.n);
+  if (newCountry) atlas.unshift(p.home.n);
   save("lottery.atlas", atlas);
+  // итог жизни и коллекции
+  const ending = endingOf(p), ends = load("lottery.endings", {});
+  const newEnding = !ends[ending.id];
+  ends[ending.id] = (ends[ending.id] || 0) + 1;
+  save("lottery.endings", ends);
+  const codex = load("lottery.codex", { c: [], e: [] });
+  codex.c = [...new Set(codex.c.concat(Object.keys(p.seen)))];
+  codex.e = [...new Set(codex.e.concat(p.evs || []))];
+  save("lottery.codex", codex);
+  const rareIds = RARE().map(e => e.id);
+  save("lottery.rares", [...new Set(load("lottery.rares", []).concat((p.evs || []).filter(id => rareIds.includes(id))))]);
+  save("lottery.livesTotal", load("lottery.livesTotal", load("lottery.lives", []).length) + 1);
+  if (mode === "daily") save("lottery.dailies", [...new Set(load("lottery.dailies", []).concat(today()))]);
+  // испытание
+  let chalDone = false, chalReward = 0;
+  if (challenge) {
+    chalDone = challenge.ok(p);
+    const done = load("lottery.challenges", []);
+    if (chalDone && !done.includes(challenge.id)) { chalReward = challenge.reward; save("lottery.challenges", done.concat(challenge.id)); save("lottery.points", load("lottery.points", 0) + chalReward); }
+  }
+  // династия: род продолжается от последней прожитой жизни
+  const dynPrev = load("lottery.dynasty", null);
+  const dyn = p.gen > 1 && dynPrev ? dynPrev : { name: p.last, line: [] };
+  dyn.gen = p.gen || 1;
+  dyn.line = dyn.line.concat({ n: fullName(p), c: p.home.n, a: p.age }).slice(-12);
+  save("lottery.dynasty", dyn);
+  save("lottery.heirs", p.kids.length && mode !== "daily" ? heirSnapshot(p) : null);
+  // опыт: счёт жизни плюс открытия
+  const xp0 = load("lottery.xp", 0);
+  let gained = s + (newEnding ? 300 : 0) + (newCountry ? 100 : 0) + chalReward;
+  save("lottery.xp", xp0 + gained);
   const before = load("lottery.ach", []);
-  const now = achievementsOf(p, atlas);
+  const now = achievementsOf(p, atlas, metaNow({ gen: p.gen || 1 }));
   const fresh = now.filter(a => !before.includes(a));
+  gained += fresh.length * 150;
+  const shown = now.filter(id => fresh.includes(id) || !ACHIEVEMENTS.find(x => x.id === id).meta);
+  save("lottery.xp", xp0 + gained);
   save("lottery.ach", [...new Set(before.concat(now))]);
   if (window.Platform) Platform.unlock(now);
   const lives = load("lottery.lives", []);
   const best = lives.reduce((m, l) => Math.max(m, l.score), 0);
-  lives.unshift({ name: fullName(p), country: p.home.n, age: p.age, score: s, date: today(), job: p.job, cause: p.cause, mode });
+  lives.unshift({ name: fullName(p), country: p.home.n, age: p.age, score: s, date: today(), job: p.job, cause: p.cause, mode, ending: ending.id, gen: p.gen || 1 });
   if (mode === "daily") {
     const best = load("lottery.dayBest", null);
     if (!best || best.date !== today() || s > best.score) save("lottery.dayBest", { date: today(), score: s, name: fullName(p), country: p.home.n });
   }
   save("lottery.lives", lives.slice(0, 50));
   const child = p.age < 5;
-  const share = tr(`Лотерея рождения${mode === "daily" ? " · рождение дня " + today() : ""}: ${fullName(p)}, ${p.home.name}, ${years(p.age)}${p.dream ? (p.dreamDone ? ", мечта сбылась" : ", мечта не сбылась") : ""} · ${fmt(s)} очков`,
-    `Birth Lottery${mode === "daily" ? " · daily birth " + today() : ""}: ${fullName(p)}, ${p.home.name}, ${years(p.age)}${p.dream ? (p.dreamDone ? ", dream came true" : ", dream didn't come true") : ""} · ${fmt(s)} points`);
+  const share = tr(`Лотерея рождения${mode === "daily" ? " · рождение дня " + today() : ""}: ${fullName(p)}, ${p.home.name}, ${years(p.age)} · «${ending.n}»${p.dream ? (p.dreamDone ? ", мечта сбылась" : ", мечта не сбылась") : ""} · ${fmt(s)} очков`,
+    `Birth Lottery${mode === "daily" ? " · daily birth " + today() : ""}: ${fullName(p)}, ${p.home.name}, ${years(p.age)} · "${ending.n}"${p.dream ? (p.dreamDone ? ", dream came true" : ", dream didn't come true") : ""} · ${fmt(s)} points`);
   const all = [{ t: p, me: true }, ...twins.map(t => ({ t }))];
+  const endCount = Object.keys(ends).length;
   app.innerHTML = `<section class="stack">
-    <span class="eyebrow fade">${p.home.name}${p.f.emigrated && !p.f.returned ? " → " + p.c.name : ""}</span>
+    <span class="eyebrow fade">${p.home.name}${p.f.emigrated && !p.f.returned ? " → " + p.c.name : ""}${p.gen > 1 ? ` · ${tr("поколение", "generation")} ${p.gen}` : ""}</span>
     <h1 class="fade" style="--d:1">${esc(fullName(p))}</h1>
     <p class="age fade" style="--d:2">${years(p.age)}</p>
     <p class="muted fade" style="--d:3">${tr(`Причина: ${p.cause}.`, `Cause: ${p.cause}.`)} ${child ? tr(`Так случается с ${(p.home.u5 * 100).toFixed(1)} из 100 детей, родившихся в этой стране.`, `This happens to ${(p.home.u5 * 100).toFixed(1)} of every 100 children born in this country.`) : tr(`В среднем здесь живут ${p.c.le.toFixed(0)} лет.`, `Average life expectancy here is ${p.c.le.toFixed(0)}.`)}
     ${p.dream ? (p.dreamDone ? tr(` Мечта сбылась: `, ` Dream came true: `) : tr(` Мечта не сбылась: `, ` Dream didn't come true: `)) + p.dream.t.toLowerCase() + "." : ""}</p>
   </section>
-  <section class="panel fade" style="--d:4"><div class="row between">
+  <section class="ending"><div class="card"><span class="eyebrow">${tr("Итог жизни", "Life ending")}${newEnding ? tr(" · новый", " · new") : ""}</span>
+    <h2>${esc(ending.n)}</h2><p class="muted">${esc(txt(ending.d, p))}</p>
+    <span class="note">${tr("Книга судеб", "Book of fates")}: ${endCount} ${tr("из", "of")} ${ENDINGS.length}</span><div class="shine"></div></div></section>
+  ${challenge ? `<section class="tip fade" style="--d:4"><span class="eyebrow">${esc(challenge.n)}</span><span>${chalDone ? tr("Испытание пройдено!", "Challenge complete!") + (chalReward ? ` +${fmt(chalReward)} ${tr("очков", "points")}` : "") : tr("Цель не достигнута: ", "Goal not reached: ") + esc(challenge.goal.toLowerCase())}</span></section>` : ""}
+  <section class="panel fade" style="--d:5"><div class="row between">
     <div class="stack" style="gap:2px"><span class="eyebrow">${tr("Очки", "Score")}</span><span class="score" id="score">0</span></div>
     <span class="note">(${p.age} × 10${p.dreamDone ? " + 600" : ""}) × ${difficulty(p).toFixed(2)}${s > best && lives.length > 1 ? tr(" · новый рекорд!", " · new record!") : ""}</span></div>
     <div class="facts">${p.job ? `<span>${jobName(p)}</span>` : ""}${p.kids.length ? `<span>${tr(plural(p.kids.length, "ребёнок", "ребёнка", "детей"), p.kids.length + (p.kids.length === 1 ? " child" : " children"))}</span>` : ""}${p.f.trips ? `<span>${tr("путешествий", "trips")}: ${p.f.trips}</span>` : ""}</div>
+    ${levelHTML(xp0)}<div class="badges" id="unl"></div>
   </section>
-  <section class="panel fade" style="--d:5"><span class="eyebrow">${tr("Родившиеся в ту же секунду", "Born in the same second")}</span>
+  ${p.kids.length && mode !== "daily" ? `<section class="panel fade" style="--d:6"><span class="eyebrow">${tr("Продолжить род", "Continue the family")} · ${tr("поколение", "generation")} ${(p.gen || 1) + 1}</span>
+    <p class="note">${tr("Проживи следующую жизнь за одного из детей: та же фамилия, часть денег и, может быть, черта характера.", "Live your next life as one of your children: the same family name, some of the money and maybe a character trait.")}</p>
+    <div class="row">${heirButtons(p)}</div></section>` : ""}
+  <section class="panel fade" style="--d:6"><span class="eyebrow">${tr("Родившиеся в ту же секунду", "Born in the same second")}</span>
     <div class="race">${all.map(({ t, me }) => `<div class="lane ${me ? "me" : ""}"><div class="top"><span>${esc(fullName(t))}${me ? tr(" (ты)", " (you)") : ""}, ${t.home.name}${t.f.emigrated && !t.f.returned ? " → " + t.c.name : ""}</span><span>${years(t.age)}${t.dreamDone ? tr(" · мечта ✓", " · dream ✓") : ""}</span></div><div class="track"><div class="run" data-w="${Math.min(100, t.age / 105 * 100)}"></div></div></div>`).join("")}</div>
   </section>
-  ${now.length ? `<section class="panel fade" style="--d:6"><span class="eyebrow">${tr("Достижения этой жизни", "Achievements this life")}</span><div class="badges">${now.map((id, i) => { const a = ACHIEVEMENTS.find(x => x.id === id); return `<span class="badge ${fresh.includes(id) ? "new" : "on"}" style="--i:${i}" title="${esc(a.d)}">${a.n}${fresh.includes(id) ? tr(" · новое", " · new") : ""}</span>`; }).join("")}</div></section>` : ""}
-  ${p.log.length ? `<section class="panel fade" style="--d:7"><span class="eyebrow">${tr("Биография", "Life story")}</span><ul class="log">${p.log.map(([c, s, a]) => { const [cl, ic] = iconFor(c, s); return `<li class="${cl}"><span class="ic">${ic}</span><span><span class="y">${a}</span>${esc(s)}</span></li>`; }).join("")}</ul></section>` : ""}
-  <div class="row fade" style="--d:8"><button id="again" class="big pulse">${tr("Родиться снова", "Be born again")}</button><button id="copy" class="ghost">${tr("Скопировать результат", "Copy result")}</button><button id="home" class="ghost">${tr("В начало", "Home")}</button></div>
+  ${shown.length ? `<section class="panel fade" style="--d:7"><span class="eyebrow">${tr("Достижения этой жизни", "Achievements this life")}</span><div class="badges">${shown.map((id, i) => { const a = ACHIEVEMENTS.find(x => x.id === id); return `<span class="badge ${fresh.includes(id) ? "new" : "on"}" style="--i:${i}" title="${esc(a.d)}">${a.n}${fresh.includes(id) ? tr(" · новое", " · new") : ""}</span>`; }).join("")}</div></section>` : ""}
+  ${p.log.length ? `<section class="panel fade" style="--d:8"><span class="eyebrow">${tr("Биография", "Life story")}</span><ul class="log">${p.log.map(([c, s, a, evIc, rare]) => { const [cl, ic] = iconFor(c, s, evIc); return `<li class="${cl}${rare ? " rare" : ""}"><span class="ic">${ic}</span><span><span class="y">${a}</span>${esc(s)}</span></li>`; }).join("")}</ul></section>` : ""}
+  <div class="row fade" style="--d:9"><button id="again" class="big pulse">${tr("Родиться снова", "Be born again")}</button><button id="copy" class="ghost">${tr("Скопировать результат", "Copy result")}</button><button id="home" class="ghost">${tr("В начало", "Home")}</button></div>
   <p class="note" id="share">${esc(share)}</p>`;
   document.body.classList.remove("dim");
   window.Field && Field.restore();
   scrollTo(0, 0);
-  document.getElementById("again").onclick = () => begin("random");
+  bindHeirs(p);
+  document.getElementById("again").onclick = () => mode === "challenge" ? begin("challenge", { id: challenge.id }) : begin("random");
   document.getElementById("home").onclick = () => screenStart();
   document.getElementById("copy").onclick = () => {
     const btn = document.getElementById("copy");
     if (!navigator.clipboard) return selectShare();
     navigator.clipboard.writeText(share).then(() => btn.textContent = tr("Скопировано", "Copied"), selectShare);
   };
-  await sleep(500);
+  setTimeout(() => { newEnding ? Sound.great() : Sound.chime(); if (newEnding) burst({ particleCount: 80, spread: 70, origin: { y: .3 } }); Music.start(); }, REDUCE ? 0 : 700);
+  await sleep(900);
   requestAnimationFrame(() => document.querySelectorAll(".run").forEach(r => r.style.width = r.dataset.w + "%"));
   let lastTick = 0;
   await tween(0, s, 1600, v => { document.getElementById("score").textContent = fmt(Math.round(v)); const now = performance.now(); if (now - lastTick > 70) { lastTick = now; Sound.tick(); } });
-  if (p.dreamDone || fresh.length || (s > best && lives.length > 1)) { Sound.great(); burst({ particleCount: 120, spread: 90 }); }
+  if (p.dreamDone || fresh.length || chalReward || (s > best && lives.length > 1)) { Sound.great(); burst({ particleCount: 120, spread: 90 }); }
+  await animateXP(xp0, xp0 + gained);
+}
+// опыт заполняет шкалу; на каждом новом уровне — вспышка и список того, что открылось
+async function animateXP(from, to) {
+  let lv = levelOf(from);
+  const fill = document.getElementById("xpf"), n = document.getElementById("xpn");
+  if (!fill) return;
+  await tween(from, to, 1500, v => {
+    const l = levelOf(v);
+    fill.style.width = levelPct(v) + "%";
+    n.textContent = "+" + fmt(Math.round(v - from)) + tr(" опыта", " XP");
+    if (l > lv) { lv = l; levelUp(l); }
+  });
+}
+function levelUp(l) {
+  const b = document.getElementById("lv");
+  b.textContent = l; b.classList.remove("lvup"); void b.offsetWidth; b.classList.add("lvup");
+  Sound.great(); burst({ particleCount: 100, spread: 100 }); buzz("success");
+  const un = UNLOCKS.filter(u => u.lvl === l);
+  toast(tr(`Уровень души ${l}!`, `Soul level ${l}!`), un.map(u => `${u.t}: ${u.n}`).join(" · "));
+  document.getElementById("unl").insertAdjacentHTML("beforeend", un.map((u, i) => `<span class="badge new" style="--i:${i}">${esc(u.t)}: ${esc(u.n)}</span>`).join(""));
 }
 function selectShare() { const r = document.createRange(); r.selectNodeContents(document.getElementById("share")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
 

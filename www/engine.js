@@ -106,7 +106,7 @@ function apply(p, eff, soft = 1) {
     if (!(key in p.r)) continue;
     let v = v0;
     if (v > 0) for (const t of p.traits) v *= (T[t].gain && T[t].gain[key]) || 1;
-    else v *= soft;
+    else { v *= soft; for (const t of p.traits) v *= (T[t].loss && T[t].loss[key]) || 1; }
     v = Math.round(v);
     if (!v) continue;
     p.r[key] = clamp(p.r[key] + v);
@@ -121,6 +121,7 @@ function jobName(p, id = p.job) { const J = window.JOBS[id]; if (!J) return tr("
 function setJob(p, id) {
   if (!id) return;
   p.job = id; p.jobLvl = 1; p.retired = false;
+  p.f.jobsHeld = (p.f.jobsHeld || []).includes(id) ? p.f.jobsHeld : (p.f.jobsHeld || []).concat(id);
   if (id === "doctor") p.f.wasDoctor = true;
   if (id === "business") p.f.biz = p.f.biz || 1;
 }
@@ -163,14 +164,16 @@ function chanceOf(p, opt) {
   let bonus = 0;
   for (const tag of opt.tags || []) {
     for (const t of p.traits) bonus += (T[t].ch && T[t].ch[tag]) || 0;
+    bonus += (p.bonus && p.bonus.tags && p.bonus.tags[tag]) || 0;
     const F = window.FOCUS.find(f => f.id === p.focus);
     if (F && F.tag === tag) bonus += .06;
   }
-  return clamp(base + bonus + (p.bonus && p.bonus.luck || 0), .03, .97);
+  return clamp(base + bonus + (p.bonus && p.bonus.luck || 0) + (p.mods && p.mods.chance || 0), .03, .97);
 }
 const softMode = () => !!(window.SETTINGS && window.SETTINGS.soft);
 function eligible(p, card) {
   if (card.heavy && softMode()) return false;
+  if (p.mods && p.mods.ban && p.mods.ban.includes(card.id)) return false;
   if (p.age < card.from || p.age > card.to) return false;
   if (card.if && !card.if(p)) return false;
   const seen = p.seen[card.id];
@@ -182,7 +185,8 @@ function cardsFor(p) {
   const prio = all.filter(c => c.prio).slice(0, 2);
   const rest = all.filter(c => !c.prio);
   const out = prio.slice();
-  const want = Math.min(3, prio.length + 2);
+  // в самые насыщенные годы (15–64) иногда выпадает третья карточка
+  const want = Math.min(3, prio.length + 2 + (p.age >= 15 && p.age < 65 && rng() < .35 ? 1 : 0));
   while (out.length < want && rest.length) {
     const c = weighted(rest, x => txt(x.w, p) ?? 1);
     out.push(c); rest.splice(rest.indexOf(c), 1);
@@ -196,12 +200,14 @@ function followUp(p, used) {
 function optionsOf(p, card) { return card.o.filter(o => !o.if || o.if(p)); }
 function resolve(p, card, opt) {
   if (opt.pre) opt.pre(p);
+  const wasIll = !!p.f.ill;
   const chance = chanceOf(p, opt);
   const ok = rng() < chance;
   const soft = p.traits.includes("careful") ? window.TRAITS.careful.soft : 1;
   const changes = apply(p, ok ? opt.yes : (opt.no || {}), ok ? 1 : soft);
   if (ok && opt.set) opt.set(p);
   if (!ok && opt.setNo) opt.setNo(p);
+  if (wasIll && !p.f.ill && ok) p.f.illCount = (p.f.illCount || 0) + 1;
   const text = txt(ok ? opt.ys : opt.ns, p);
   if (text) p.log.push([ok ? "up" : "down", `${card.t}: ${text}`, p.age]);
   p.seen[card.id] = p.age;
@@ -252,11 +258,16 @@ function liveStage(p) {
   for (let i = 0; i < nEvents; i++) {
     const ev = weighted(window.EVENTS, x => x.heavy && softMode() ? 0 : x.w(p));
     if (!ev.s) continue;
+    (p.evs || (p.evs = [])).push(ev.id);
     const text = txt(ev.s, p);
     const changes = apply(p, ev.e);
     if (ev.act) ev.act(p);
-    p.log.push([changes.some(([, v]) => v < 0) ? "down" : "up", text, p.age]);
+    p.log.push([changes.some(([, v]) => v < 0) ? "down" : "up", text, p.age, ev.ic, ev.rare]);
   }
+  if (p.married && p.f.marriedAt == null) p.f.marriedAt = p.age;
+  if (!p.married) p.f.marriedAt = null;
+  if (p.f.jail) p.f.wasJailed = true;
+  if (p.age >= 30 && p.r.m >= 70) p.f.richAfter30 = true;
   if (p.age >= 40) apply(p, { h: -2 - (p.age >= 60 ? 3 : 0) });
   if (p.age >= 20) p.r.t = clamp(p.r.t - 3); // связи понемногу слабеют, если о них не заботиться
   // здоровье частично возвращается к норме страны и возраста: средние риски страны уже заложены в A
@@ -298,4 +309,35 @@ function autoLife(p) {
 
 function difficulty(p) { return 1 + 1.3 * (1 - p.home.d) + (3 - p.q) * .1; }
 function score(p) { return Math.round((p.age * 10 + (p.dreamDone ? 600 : 0)) * difficulty(p)); }
-function achievementsOf(p, atlas) { return window.ACHIEVEMENTS.filter(a => a.ok(p, atlas)).map(a => a.id); }
+function achievementsOf(p, atlas, meta) { return window.ACHIEVEMENTS.filter(a => a.ok(p, atlas || [], meta)).map(a => a.id); }
+
+// ---------- Итог жизни ----------
+function endingOf(p) {
+  let best = null;
+  for (const e of window.ENDINGS || []) if ((!best || e.rank > best.rank) && e.ok(p)) best = e;
+  return best;
+}
+
+// ---------- Династия: следующая жизнь за одного из детей ----------
+// Ребёнок рождается там, где жил родитель. Достаток семьи зависит от денег родителя,
+// часть денег и знаний переходит по наследству, одна черта может передаться.
+function newHeir(parent, kid) {
+  const c = parent.c, p = newPerson(c);
+  const N = nameSet(c.reg);
+  p.sex = kid.sex; p.first = kid.first; p.last = kid.last; p.order = N.order;
+  p.q = clamp(1 + Math.floor(parent.r.m / 21), 1, 5);
+  p.fam = parent.sex === "m" || !parent.partner || !parent.partner.base ? parent.fam : { ...parent.fam, base: parent.partner.base };
+  const partnerName = parent.partner ? fullName({ ...parent.partner, order: N.order }) : tr("неизвестно", "unknown");
+  const me = fullName(parent);
+  p.parents = parent.sex === "m" ? { father: me, mother: partnerName, fAlive: false, mAlive: !!parent.partner } : { father: partnerName, mother: me, fAlive: !!parent.partner, mAlive: false };
+  if (rng() < .5 && parent.traits.length) {
+    const t = pick(parent.traits);
+    if (!p.traits.includes(t) && !CONFLICTS.some(([a, b]) => p.traits.includes(a) && t === b || p.traits.includes(b) && t === a)) p.traits = [t].concat(p.traits.slice(0, 1));
+  }
+  p.siblings = Math.max(0, parent.kids.length - 1);
+  p.r.m = clamp(Math.round(8 + 55 * c.d + (p.q - 3) * 12 + parent.r.m / 6));
+  if (parent.peak.k >= 70) p.r.k += 5;
+  if (parent.f.house) p.r.j = clamp(p.r.j + 5);
+  p.heirOf = me;
+  return p;
+}
