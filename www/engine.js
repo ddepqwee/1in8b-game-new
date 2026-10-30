@@ -89,7 +89,7 @@ function newPerson(country) {
   const T = window.TRAITS;
   const h = clamp(Math.round(45 + (c.le - 55) * 1.3 + (rng() - .5) * 10 + traits.reduce((s, t) => s + (T[t].h0 || 0), 0)), 15, 98);
   return {
-    c, home: c, q, sex, age: 0, alive: true, h0: h, traits, fam,
+    c, home: c, q, sex, age: 0, alive: true, h0: h, traits, fam, born: window.BIRTH_YEAR ?? BORN_MIN + Math.floor(rng() * (BORN_MAX - BORN_MIN + 1)),
     first: nm.first, last: nm.last, order: nm.order,
     parents: { father, mother, fAlive: true, mAlive: true },
     siblings: Math.round(rng() * (1 + 5 * (1 - c.d))),
@@ -98,6 +98,11 @@ function newPerson(country) {
     focus: null, dream: null, dreamDone: false, log: [], seen: {}, deathAge: null, cause: null,
   };
 }
+// ---------- Эпоха ----------
+// Год рождения: от 1930 до 2015. Год сейчас = год рождения + возраст. Старые времена чуть опаснее для взрослых.
+const BORN_MIN = 1930, BORN_MAX = 2015;
+const yearOf = p => (p.born || 1990) + p.age;
+const eraHazard = year => 1 + clamp((1985 - year) / 100, 0, .35);
 function healthRef(p) { const a = p.age; return p.h0 - Math.max(0, a - 40) * 0.4 - Math.max(0, a - 60) * 0.6; }
 
 function apply(p, eff, soft = 1) {
@@ -168,7 +173,7 @@ function chanceOf(p, opt) {
     const F = window.FOCUS.find(f => f.id === p.focus);
     if (F && F.tag === tag) bonus += .06;
   }
-  return clamp(base + bonus + (p.bonus && p.bonus.luck || 0) + (p.mods && p.mods.chance || 0), .03, .97);
+  return clamp(base + bonus + (p.bonus && p.bonus.luck || 0) + (p.mods && p.mods.chance || 0) + (p._mini || 0), .03, .97);
 }
 const softMode = () => !!(window.SETTINGS && window.SETTINGS.soft);
 function eligible(p, card) {
@@ -264,6 +269,8 @@ function liveStage(p) {
     if (ev.act) ev.act(p);
     p.log.push([changes.some(([, v]) => v < 0) ? "down" : "up", text, p.age, ev.ic, ev.rare]);
   }
+  // эпоха, сквозные персонажи, последствия: подключаются из data/*.js
+  for (const hook of window.STAGE_HOOKS || []) hook(p);
   if (p.married && p.f.marriedAt == null) p.f.marriedAt = p.age;
   if (!p.married) p.f.marriedAt = null;
   if (p.f.jail) p.f.wasJailed = true;
@@ -282,7 +289,7 @@ function liveStage(p) {
   for (let x = p.age; x < p.age + 5; x++) {
     let die;
     if (x < 5) { const w = [1.45, 1.2, 1, .85, .7][p.q - 1]; die = x === 0 ? rng() < p.c.u5 * w * .65 : rng() < p.c.u5 * w * .35 / 4; }
-    else die = rng() < 1 - Math.exp(-p.c.A * Math.exp(GOMPERTZ_B * x) * mult * HAZARD_FIX);
+    else die = rng() < 1 - Math.exp(-p.c.A * Math.exp(GOMPERTZ_B * x) * mult * HAZARD_FIX * eraHazard((p.born || 1990) + x));
     if (die || x >= 109) { p.cause = deathCause(p, x); p.age = x; p.alive = false; checkDream(p); return; }
   }
   p.age += 5;
@@ -339,5 +346,7 @@ function newHeir(parent, kid) {
   if (parent.peak.k >= 70) p.r.k += 5;
   if (parent.f.house) p.r.j = clamp(p.r.j + 5);
   p.heirOf = me;
+  p.born = (parent.born || 1990) + kid.born;
+  for (const hook of window.HEIR_HOOKS || []) hook(parent, p);
   return p;
 }

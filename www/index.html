@@ -326,6 +326,7 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border: 1px s
 <script src="data/content-places.js"></script>
 <script src="data/content-meta.js"></script>
 <script src="data/content-legacy.js"></script>
+<script src="data/content-eras.js"></script>
 <script src="data/names-en.js"></script>
 <script src="data/lang-en.js"></script>
 <script src="engine.js"></script>
@@ -660,7 +661,7 @@ function renderGame() {
 }
 function updateHud(changes = []) {
   const p = P;
-  document.getElementById("h-country").textContent = p.c.name + (p.f.emigrated && !p.f.returned ? tr(" · родина: ", " · born in ") + p.home.name : "");
+  document.getElementById("h-country").textContent = yearOf(p) + " · " + p.c.name + (p.f.emigrated && !p.f.returned ? tr(" · родина: ", " · born in ") + p.home.name : "");
   document.getElementById("h-dream").innerHTML = p.dream ? `<span class="eyebrow">${tr("Мечта", "Dream")}</span><span class="dream ${p.dreamDone ? "done" : ""}">${p.dreamDone ? "✓ " : ""}${p.dream.t}</span><span class="note">${p.dream.d}</span>` : "";
   const fam = familyLine(p), job = jobLine(p);
   document.getElementById("h-facts").innerHTML = `${job ? `<span>${job}</span>` : ""}${fam ? `<span>${esc(fam)}</span>` : ""}${challenge ? `<span>${tr("цель", "goal")}: ${esc(challenge.goal.toLowerCase())}${challenge.ok(p) ? " ✓" : ""}</span>` : ""}`;
@@ -746,7 +747,10 @@ function bindCollections() {
   box.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { colTab = b.dataset.tab; box.innerHTML = collectionsHTML(); bindCollections(); });
 }
 // снимок родителя, чтобы продолжить род даже после перезапуска игры
-function heirSnapshot(p) { return { cn: p.c.n, r: p.r, peak: p.peak, fam: p.fam, partner: p.partner, traits: p.traits, kids: p.kids, sex: p.sex, first: p.first, last: p.last, order: p.order, f: { house: !!p.f.house }, gen: p.gen || 1 }; }
+function heirSnapshot(p) { return { cn: p.c.n, r: p.r, peak: p.peak, fam: p.fam, partner: p.partner, traits: p.traits, kids: p.kids, sex: p.sex, first: p.first, last: p.last, order: p.order, f: heirFlags(p), born: p.born, gen: p.gen || 1, friend: p.friend, rival: p.rival }; }
+// что переходит детям: дом, семейное дело, реликвия, слава рода
+const HEIR_F = ["house", "biz", "bizMax", "restaurant", "shopChain", "hostel", "vetClinic", "captain", "heirloom", "treasure", "famous", "farmLand", "landDone", "philanthropy", "honored", "relic"];
+function heirFlags(p) { const f = {}; for (const k of HEIR_F) if (p.f[k]) f[k] = p.f[k]; f.job = p.job; f.jobsHeld = p.f.jobsHeld; return f; }
 function fromSnapshot(s) { return { ...s, c: COUNTRIES.find(c => c.n === s.cn) || COUNTRIES[0] }; }
 const kidLabel = k => tr(k.sex === "f" ? "дочь" : "сын", k.sex === "f" ? "daughter" : "son");
 function heirButtons(parent) { return parent.kids.slice(0, 8).map((k, i) => `<button class="ghost heir" data-k="${i}">${esc(k.first)} · ${kidLabel(k)}</button>`).join(""); }
@@ -840,6 +844,7 @@ async function begin(m, opt = {}) {
   P.gen = opt.gen || 1;
   if (m === "random") applyBonus(P);
   twins = [0, 1, 2, 3].map(() => newPerson());
+  twins.forEach(t => t.born = P.born);
   if (opt.heir) await familyTree(P); else await roulette(P);
   screenBirth();
 }
@@ -869,7 +874,7 @@ async function chapter(age) {
   const c = CHAPTERS[age]; if (!c) return;
   Music.chapter(age); window.Field && Field.season(age);
   skipping = false;
-  overlay.innerHTML = `<div class="chapter"><span class="num">${c[0]}</span><h1>${c[1]}</h1><div class="line"></div></div>`;
+  overlay.innerHTML = `<div class="chapter"><span class="num">${c[0]}</span><h1>${c[1]}</h1><div class="line"></div><span class="eyebrow">${yearOf(P)}</span></div>`;
   overlay.classList.add("show"); Sound.chime();
   await sleep(1700);
   overlay.classList.remove("show");
@@ -912,7 +917,7 @@ async function screenBirth() {
   skipping = false;
   setMood(p);
   app.innerHTML = `<section class="stack">
-    <span class="eyebrow fade">${mode === "daily" ? tr("Рождение дня", "Daily birth") : mode === "challenge" ? tr("Испытание", "Challenge") + ": " + esc(challenge.n) : p.gen > 1 ? tr("Поколение ", "Generation ") + p.gen : tr("Только что", "Just now")} · ${tr(g(p, "мальчик", "девочка"), g(p, "boy", "girl"))}</span>
+    <span class="eyebrow fade">${mode === "daily" ? tr("Рождение дня", "Daily birth") : mode === "challenge" ? tr("Испытание", "Challenge") + ": " + esc(challenge.n) : p.gen > 1 ? tr("Поколение ", "Generation ") + p.gen : tr("Только что", "Just now")} · ${p.born} · ${tr(g(p, "мальчик", "девочка"), g(p, "boy", "girl"))}</span>
     <h1 id="b-name">&nbsp;</h1>
     <svg class="ecg" viewBox="0 0 320 34" aria-hidden="true"><path d="M0 20 H70 L78 20 L84 8 L90 30 L96 4 L102 26 L108 20 H180 L188 20 L194 10 L200 28 L206 6 L212 24 L218 20 H320"/></svg>
     <p class="muted fade" style="--d:2">${c.name}, ${c.partName}. ${tr(`Шанс родиться здесь: 1 из ${fmt(c.odds)}. Семья ${QUINTILE[p.q]} по меркам страны.`, `Odds of being born here: 1 in ${fmt(c.odds)}. A ${QUINTILE[p.q]} family by local standards.`)}</p>
@@ -1207,19 +1212,19 @@ async function screenEnd() {
   if (window.Platform) Platform.unlock(now);
   const lives = load("lottery.lives", []);
   const best = lives.reduce((m, l) => Math.max(m, l.score), 0);
-  lives.unshift({ name: fullName(p), country: p.home.n, age: p.age, score: s, date: today(), job: p.job, cause: p.cause, mode, ending: ending.id, gen: p.gen || 1 });
+  lives.unshift({ name: fullName(p), country: p.home.n, age: p.age, score: s, date: today(), job: p.job, cause: p.cause, mode, ending: ending.id, gen: p.gen || 1, born: p.born });
   if (mode === "daily") {
     const best = load("lottery.dayBest", null);
     if (!best || best.date !== today() || s > best.score) save("lottery.dayBest", { date: today(), score: s, name: fullName(p), country: p.home.n });
   }
   save("lottery.lives", lives.slice(0, 50));
   const child = p.age < 5;
-  const share = tr(`Лотерея рождения${mode === "daily" ? " · рождение дня " + today() : ""}: ${fullName(p)}, ${p.home.name}, ${years(p.age)} · «${ending.n}»${p.dream ? (p.dreamDone ? ", мечта сбылась" : ", мечта не сбылась") : ""} · ${fmt(s)} очков`,
-    `Birth Lottery${mode === "daily" ? " · daily birth " + today() : ""}: ${fullName(p)}, ${p.home.name}, ${years(p.age)} · "${ending.n}"${p.dream ? (p.dreamDone ? ", dream came true" : ", dream didn't come true") : ""} · ${fmt(s)} points`);
+  const share = tr(`Лотерея рождения${mode === "daily" ? " · рождение дня " + today() : ""}: ${fullName(p)}, ${p.home.name}, ${p.born}–${yearOf(p)} · «${ending.n}»${p.dream ? (p.dreamDone ? ", мечта сбылась" : ", мечта не сбылась") : ""} · ${fmt(s)} очков`,
+    `Birth Lottery${mode === "daily" ? " · daily birth " + today() : ""}: ${fullName(p)}, ${p.home.name}, ${p.born}–${yearOf(p)} · "${ending.n}"${p.dream ? (p.dreamDone ? ", dream came true" : ", dream didn't come true") : ""} · ${fmt(s)} points`);
   const all = [{ t: p, me: true }, ...twins.map(t => ({ t }))];
   const endCount = Object.keys(ends).length;
   app.innerHTML = `<section class="stack">
-    <span class="eyebrow fade">${p.home.name}${p.f.emigrated && !p.f.returned ? " → " + p.c.name : ""}${p.gen > 1 ? ` · ${tr("поколение", "generation")} ${p.gen}` : ""}</span>
+    <span class="eyebrow fade">${p.born}–${yearOf(p)} · ${p.home.name}${p.f.emigrated && !p.f.returned ? " → " + p.c.name : ""}${p.gen > 1 ? ` · ${tr("поколение", "generation")} ${p.gen}` : ""}</span>
     <h1 class="fade" style="--d:1">${esc(fullName(p))}</h1>
     <p class="age fade" style="--d:2">${years(p.age)}</p>
     <p class="muted fade" style="--d:3">${tr(`Причина: ${p.cause}.`, `Cause: ${p.cause}.`)} ${child ? tr(`Так случается с ${(p.home.u5 * 100).toFixed(1)} из 100 детей, родившихся в этой стране.`, `This happens to ${(p.home.u5 * 100).toFixed(1)} of every 100 children born in this country.`) : tr(`В среднем здесь живут ${p.c.le.toFixed(0)} лет.`, `Average life expectancy here is ${p.c.le.toFixed(0)}.`)}
