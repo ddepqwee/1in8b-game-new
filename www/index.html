@@ -345,6 +345,7 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border: 1px s
 <script src="data/content-legacy.js"></script>
 <script src="data/content-eras.js"></script>
 <script src="data/content-arcs.js"></script>
+<script src="data/content-weekly.js"></script>
 <script src="data/names-en.js"></script>
 <script src="data/lang-en.js"></script>
 <script src="engine.js"></script>
@@ -578,7 +579,7 @@ const codexTotal = () => CARDS.length + EVENTS.filter(e => e.s).length;
 function metaNow(extra = {}) {
   const codex = load("lottery.codex", { c: [], e: [] });
   return { gen: 1, endings: Object.keys(load("lottery.endings", {})).length, level: soulLevel(), challenges: load("lottery.challenges", []).length,
-    lives: load("lottery.livesTotal", load("lottery.lives", []).length), dailies: load("lottery.dailies", []).length,
+    lives: load("lottery.livesTotal", load("lottery.lives", []).length), dailies: load("lottery.dailies", []).length, weeks: load("lottery.weeks", []).length,
     codex: (codex.c.length + codex.e.length) / codexTotal(), rares: load("lottery.rares", []).length, ...extra };
 }
 function applyTheme() {
@@ -775,6 +776,11 @@ const kidLabel = k => tr(k.sex === "f" ? "дочь" : "сын", k.sex === "f" ? 
 function heirButtons(parent) { return parent.kids.slice(0, 8).map((k, i) => `<button class="ghost heir" data-k="${i}">${esc(k.first)} · ${kidLabel(k)}</button>`).join(""); }
 function bindHeirs(parent) { app.querySelectorAll("button.heir").forEach(b => b.onclick = () => begin("random", { heir: parent.kids[+b.dataset.k], parent, gen: (parent.gen || 1) + 1 })); }
 
+// кнопка испытания недели: эпоха, часть света и лучший счёт за эту неделю
+function weekBtn() {
+  const W = WEEKLY(), best = load("lottery.weekBest", null), done = load("lottery.weeks", []).includes(W.id);
+  return `<button id="b-week" class="ghost">${done ? "✓ " : ""}${esc(W.n)} · ${W.year}${best && best.week === W.week ? ` · ${tr("рекорд", "best")} ${fmt(best.score)}` : ""}</button>`;
+}
 function screenStart() {
   document.body.classList.remove("dim"); setMood(null); P = null;
   const lives = load("lottery.lives", []), xp = load("lottery.xp", 0), lvl = levelOf(xp);
@@ -787,6 +793,7 @@ function screenStart() {
     <div class="row fade" style="--d:3">
       <button id="b-random" class="big pulse">${tr("Родиться", "Be born")}</button>
       <button id="b-daily" class="ghost">${tr("Рождение дня", "Daily birth")} · ${tr(today().split("-").reverse().slice(0, 2).join("."), today().slice(5).replace("-", "/"))}</button>
+      ${weekBtn()}
       <button id="b-chal" class="ghost" ${lvl >= 2 ? "" : "disabled style=\"opacity:.5\""}>${tr("Испытания", "Challenges")}${lvl >= 2 ? "" : ` · ${tr("уровень", "level")} 2`}</button>
       ${window.Platform && Platform.desktop ? `<button id="b-quit" class="ghost">${tr("Выйти", "Quit")}</button>` : ""}
     </div>
@@ -819,6 +826,7 @@ function screenStart() {
   <p class="note">${tr("Данные: ООН, ВОЗ, Всемирный банк. Смерть и болезни случаются с реальной частотой, но без подробностей. Нажми на экран, чтобы ускорить анимацию.", "Data: UN, WHO, World Bank. Death and illness happen at real-world rates, but never in detail. Tap the screen to speed up animations.")}</p>`;
   document.getElementById("b-random").onclick = () => begin("random");
   document.getElementById("b-daily").onclick = () => begin("daily");
+  document.getElementById("b-week").onclick = () => begin("weekly");
   document.getElementById("b-chal").onclick = () => screenChallenges();
   bindCollections();
   if (parent) bindHeirs(parent);
@@ -848,9 +856,14 @@ function screenChallenges() {
 async function begin(m, opt = {}) {
   mode = m; toasted = new Set(); challenge = null;
   document.body.classList.remove("dim");
-  setSeed(m === "daily" ? "day-" + today() : null);
-  window.UNLOCKED = m === "daily" ? [] : load("lottery.ach", []);
-  if (m === "challenge") {
+  setSeed(m === "daily" ? "day-" + today() : m === "weekly" ? "week-" + isoWeek() : null);
+  window.UNLOCKED = m === "daily" || m === "weekly" ? [] : load("lottery.ach", []);
+  if (m === "weekly") {
+    challenge = WEEKLY();
+    window.BIRTH_YEAR = challenge.year;
+    P = newPerson(weighted(COUNTRIES.filter(c => c.part === challenge.part), x => x.b));
+    window.BIRTH_YEAR = undefined;
+  } else if (m === "challenge") {
     challenge = CHALLENGES.find(c => c.id === opt.id);
     P = newPerson(challenge.country ? weighted(COUNTRIES.filter(challenge.country), x => x.b) : undefined);
     if (challenge.setup) challenge.setup(P);
@@ -936,7 +949,7 @@ async function screenBirth() {
   skipping = false;
   setMood(p);
   app.innerHTML = `<section class="stack">
-    <span class="eyebrow fade">${mode === "daily" ? tr("Рождение дня", "Daily birth") : mode === "challenge" ? tr("Испытание", "Challenge") + ": " + esc(challenge.n) : p.gen > 1 ? tr("Поколение ", "Generation ") + p.gen : tr("Только что", "Just now")} · ${p.born} · ${tr(g(p, "мальчик", "девочка"), g(p, "boy", "girl"))}</span>
+    <span class="eyebrow fade">${mode === "daily" ? tr("Рождение дня", "Daily birth") : mode === "weekly" ? tr("Испытание недели", "Weekly challenge") : mode === "challenge" ? tr("Испытание", "Challenge") + ": " + esc(challenge.n) : p.gen > 1 ? tr("Поколение ", "Generation ") + p.gen : tr("Только что", "Just now")} · ${p.born} · ${tr(g(p, "мальчик", "девочка"), g(p, "boy", "girl"))}</span>
     <h1 id="b-name">&nbsp;</h1>
     <svg class="ecg" viewBox="0 0 320 34" aria-hidden="true"><path d="M0 20 H70 L78 20 L84 8 L90 30 L96 4 L102 26 L108 20 H180 L188 20 L194 10 L200 28 L206 6 L212 24 L218 20 H320"/></svg>
     <p class="muted fade" style="--d:2">${c.name}, ${c.partName}. ${tr(`Шанс родиться здесь: 1 из ${fmt(c.odds)}. Семья ${QUINTILE[p.q]} по меркам страны.`, `Odds of being born here: 1 in ${fmt(c.odds)}. A ${QUINTILE[p.q]} family by local standards.`)}</p>
@@ -1343,8 +1356,8 @@ async function screenEnd() {
   let chalDone = false, chalReward = 0;
   if (challenge) {
     chalDone = challenge.ok(p);
-    const done = load("lottery.challenges", []);
-    if (chalDone && !done.includes(challenge.id)) { chalReward = challenge.reward; save("lottery.challenges", done.concat(challenge.id)); save("lottery.points", load("lottery.points", 0) + chalReward); }
+    const key = mode === "weekly" ? "lottery.weeks" : "lottery.challenges", done = load(key, []);
+    if (chalDone && !done.includes(challenge.id)) { chalReward = challenge.reward; save(key, done.concat(challenge.id)); save("lottery.points", load("lottery.points", 0) + chalReward); }
   }
   // династия: род продолжается от последней прожитой жизни
   const dynPrev = load("lottery.dynasty", null);
@@ -1352,7 +1365,7 @@ async function screenEnd() {
   dyn.gen = p.gen || 1;
   dyn.line = dyn.line.concat({ n: fullName(p), c: p.home.n, a: p.age }).slice(-12);
   save("lottery.dynasty", dyn);
-  save("lottery.heirs", p.kids.length && mode !== "daily" ? heirSnapshot(p) : null);
+  save("lottery.heirs", p.kids.length && mode !== "daily" && mode !== "weekly" ? heirSnapshot(p) : null);
   // опыт: счёт жизни плюс открытия
   const xp0 = load("lottery.xp", 0);
   let gained = s + (newEnding ? 300 : 0) + (newCountry ? 100 : 0) + chalReward;
@@ -1372,10 +1385,14 @@ async function screenEnd() {
     const best = load("lottery.dayBest", null);
     if (!best || best.date !== today() || s > best.score) save("lottery.dayBest", { date: today(), score: s, name: fullName(p), country: p.home.n });
   }
+  if (mode === "weekly") {
+    const best = load("lottery.weekBest", null);
+    if (!best || best.week !== challenge.week || s > best.score) save("lottery.weekBest", { week: challenge.week, score: s, name: fullName(p) });
+  }
   save("lottery.lives", lives.slice(0, 50));
   const child = p.age < 5;
-  const share = tr(`Лотерея рождения${mode === "daily" ? " · рождение дня " + today() : ""}: ${fullName(p)}, ${p.home.name}, ${p.born}–${yearOf(p)} · «${ending.n}»${p.dream ? (p.dreamDone ? ", мечта сбылась" : ", мечта не сбылась") : ""} · ${fmt(s)} очков`,
-    `Birth Lottery${mode === "daily" ? " · daily birth " + today() : ""}: ${fullName(p)}, ${p.home.name}, ${p.born}–${yearOf(p)} · "${ending.n}"${p.dream ? (p.dreamDone ? ", dream came true" : ", dream didn't come true") : ""} · ${fmt(s)} points`);
+  const share = tr(`Лотерея рождения${mode === "daily" ? " · рождение дня " + today() : mode === "weekly" ? " · " + challenge.n.toLowerCase() : ""}: ${fullName(p)}, ${p.home.name}, ${p.born}–${yearOf(p)} · «${ending.n}»${p.dream ? (p.dreamDone ? ", мечта сбылась" : ", мечта не сбылась") : ""} · ${fmt(s)} очков`,
+    `Birth Lottery${mode === "daily" ? " · daily birth " + today() : mode === "weekly" ? " · " + challenge.n.toLowerCase() : ""}: ${fullName(p)}, ${p.home.name}, ${p.born}–${yearOf(p)} · "${ending.n}"${p.dream ? (p.dreamDone ? ", dream came true" : ", dream didn't come true") : ""} · ${fmt(s)} points`);
   const all = [{ t: p, me: true }, ...twins.map(t => ({ t }))];
   const endCount = Object.keys(ends).length;
   app.innerHTML = `<section class="stack">
@@ -1395,7 +1412,7 @@ async function screenEnd() {
     <div class="facts">${p.job ? `<span>${jobName(p)}</span>` : ""}${p.kids.length ? `<span>${tr(plural(p.kids.length, "ребёнок", "ребёнка", "детей"), p.kids.length + (p.kids.length === 1 ? " child" : " children"))}</span>` : ""}${p.f.trips ? `<span>${tr("путешествий", "trips")}: ${p.f.trips}</span>` : ""}</div>
     ${levelHTML(xp0)}<div class="badges" id="unl"></div>
   </section>
-  ${p.kids.length && mode !== "daily" ? `<section class="panel fade" style="--d:6"><span class="eyebrow">${tr("Продолжить род", "Continue the family")} · ${tr("поколение", "generation")} ${(p.gen || 1) + 1}</span>
+  ${p.kids.length && mode !== "daily" && mode !== "weekly" ? `<section class="panel fade" style="--d:6"><span class="eyebrow">${tr("Продолжить род", "Continue the family")} · ${tr("поколение", "generation")} ${(p.gen || 1) + 1}</span>
     <p class="note">${tr("Проживи следующую жизнь за одного из детей: та же фамилия, часть денег и, может быть, черта характера.", "Live your next life as one of your children: the same family name, some of the money and maybe a character trait.")}</p>
     <div class="row">${heirButtons(p)}</div></section>` : ""}
   <section class="panel fade" style="--d:6"><span class="eyebrow">${tr("Родившиеся в ту же секунду", "Born in the same second")}</span>
@@ -1410,7 +1427,7 @@ async function screenEnd() {
   window.Field && Field.restore();
   scrollTo(0, 0);
   bindHeirs(p);
-  document.getElementById("again").onclick = () => mode === "challenge" ? begin("challenge", { id: challenge.id }) : begin("random");
+  document.getElementById("again").onclick = () => mode === "challenge" ? begin("challenge", { id: challenge.id }) : mode === "weekly" ? begin("weekly") : begin("random");
   document.getElementById("home").onclick = () => screenStart();
   document.getElementById("copy").onclick = () => {
     const btn = document.getElementById("copy");
