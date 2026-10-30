@@ -84,6 +84,23 @@ button.big { font-size: 18px; padding: 16px 26px; }
 .roll .zone { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: #2f5a47; }
 .roll .needle { position: absolute; top: -5px; width: 3px; height: 20px; border-radius: 2px; background: var(--fg); left: 0; box-shadow: 0 0 10px rgba(233,230,242,.8); }
 .stamp { font-family: var(--display); font-weight: 800; font-size: 15px; letter-spacing: .04em; animation: stamp .35s cubic-bezier(.2,1.6,.4,1) both; }
+.mini { border: 1px solid var(--life); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; background: rgba(242,180,90,.06); }
+.mini-q { font-family: var(--display); font-size: 30px; font-weight: 800; text-align: center; }
+.mini-opts { justify-content: center; gap: 8px; } .mini-opts button { min-width: 64px; font-size: 18px; }
+.mini-time { height: 6px; border-radius: 99px; background: #3a2530; overflow: hidden; } .mini-time i { display: block; height: 100%; background: var(--life); }
+.mini-beat { position: relative; height: 120px; display: grid; place-items: center; touch-action: manipulation; cursor: pointer; }
+.mini-beat .core, .mini-beat .ring { position: absolute; width: 56px; height: 56px; border-radius: 50%; }
+.mini-beat .core { background: rgba(242,180,90,.25); border: 2px solid var(--life); }
+.mini-beat .ring { border: 3px solid var(--fg); transition: opacity .1s; }
+.mini-grade { position: absolute; top: 4px; font-weight: 700; opacity: 0; } .mini-grade.show { animation: gradeup .6s ease-out both; }
+.mini-grade.ok, .mini-res.ok { color: var(--good); } .mini-grade.no, .mini-res.no { color: var(--bad); }
+@keyframes gradeup { from { opacity: 1; transform: translateY(8px); } to { opacity: 0; transform: translateY(-10px); } }
+.mini-haggle { position: relative; height: 26px; border-radius: 99px; background: #3a2530; cursor: pointer; touch-action: manipulation; }
+.mini-haggle .zone { position: absolute; left: 40%; width: 20%; top: 0; bottom: 0; background: #2f5a47; border-radius: 6px; }
+.mini-haggle .knob { position: absolute; top: -5px; width: 6px; height: 36px; margin-left: -3px; border-radius: 3px; background: var(--fg); box-shadow: 0 0 12px rgba(233,230,242,.8); }
+.mini-haggle .knob.stop { background: var(--life); }
+.mini-skip { padding: 4px 12px; font-size: 13px; }
+.mini-res { font-size: 20px; text-align: center; display: block; }
 .stamp.ok { color: var(--good); } .stamp.no { color: var(--bad); }
 @keyframes stamp { from { opacity: 0; transform: scale(1.8); } to { opacity: 1; transform: none; } }
 .result-text { animation: enter .4s ease both; animation-delay: .15s; }
@@ -351,7 +368,7 @@ function load(key, def) { try { return JSON.parse(localStorage.getItem(key)) ?? 
 const today = () => new Date().toISOString().slice(0, 10);
 
 // ---------- Настройки ----------
-window.SETTINGS = Object.assign({ fast: false, soft: false, tips: true }, load("lottery.settings", {}));
+window.SETTINGS = Object.assign({ fast: false, soft: false, tips: true, mini: true }, load("lottery.settings", {}));
 const saveSettings = () => save("lottery.settings", SETTINGS);
 const speed = ms => SETTINGS.fast ? ms * .45 : ms;
 
@@ -448,6 +465,7 @@ const SETTING_ROWS = [
   ["music", tr("Музыка", "Music"), tr("Тихая фоновая музыка, меняется с главами жизни и настроением", "Quiet background music that follows life's chapters and your mood")],
   ["fast", tr("Быстрые анимации", "Fast animations"), tr("Всё то же, но в два раза быстрее", "Everything the same, twice as fast")],
   ["soft", tr("Мягкий режим", "Gentle mode"), tr("Без войн, преступлений, насилия и аварий", "No war, crime, violence or accidents")],
+  ["mini", tr("Мини-игры", "Mini-games"), tr("Иногда шанс можно поднять: решить пример, попасть в ритм, сторговаться", "Sometimes you can raise the odds: solve a sum, hit the beat, haggle")],
   ["tips", tr("Подсказки", "Hints"), tr("Объяснения правил в первых жизнях", "Rule explanations in your first lives")],
 ];
 const getSetting = k => k === "sound" ? Sound.on : k === "music" ? Music.on : SETTINGS[k];
@@ -606,7 +624,7 @@ function tip(key, title, text, where) {
 document.addEventListener("keydown", e => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === "Escape") { settingsBox.classList.contains("show") ? closeSettings() : openSettings(); return; }
-  if (settingsBox.classList.contains("show")) return;
+  if (settingsBox.classList.contains("show") || Mini.active) return;
   const scope = overlay.classList.contains("show") ? overlay : app;
   if (/^[1-9]$/.test(e.key)) {
     const opts = [...scope.querySelectorAll(".option:not(.dimmed):not(.chosen):not(.win):not(.lose)")];
@@ -1018,11 +1036,147 @@ function playCard() {
   stage().querySelectorAll(".option").forEach(b => b.onclick = () => choose(card, opts[+b.dataset.i], b));
 }
 
+// ---------- Мини-игры: иногда шанс можно поднять своими руками ----------
+// экзамен (учёба), ритм (искусство, музыка, спорт), торг (дело). Дают от −15% до +15% к шансу,
+// не чаще одной за этап. Отключаются в настройках.
+const Mini = {
+  active: false,
+  kind(opt) {
+    const t = opt.tags || [];
+    return t.includes("study") ? "exam" : t.includes("business") ? "haggle" : t.some(x => x === "art" || x === "music" || x === "sport") ? "rhythm" : null;
+  },
+  async play(kind, host) {
+    this.active = true;
+    const box = document.createElement("div");
+    box.className = "mini enter";
+    host.after(box);
+    box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    let score;
+    try { score = await this[kind](box); } finally { this.active = false; }
+    box.querySelector(".mini-body").innerHTML = `<b class="mini-res ${score >= .5 ? "ok" : "no"}">${score >= .85 ? tr("Блестяще!", "Brilliant!") : score >= .5 ? tr("Неплохо", "Not bad") : tr("Мимо", "Missed")}</b>`;
+    score >= .5 ? Sound.good() : Sound.bad();
+    await sleep(650);
+    box.remove();
+    return score;
+  },
+  // общий каркас: заголовок, тело, кнопка «пропустить» (даёт ровно ноль)
+  frame(box, title, hint) {
+    box.innerHTML = `<div class="row between"><span class="eyebrow">${title}</span><button class="ghost mini-skip">${tr("Пропустить", "Skip")}</button></div><p class="note">${hint}</p><div class="mini-body"></div>`;
+    return box.querySelector(".mini-body");
+  },
+  listen(box, onTap, onSkip) {
+    const key = e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); e.stopPropagation(); onTap(); } else if (/^[1-4]$/.test(e.key)) { e.stopPropagation(); onTap(+e.key - 1); } };
+    document.addEventListener("keydown", key, true);
+    box.querySelector(".mini-skip").onclick = e => { e.stopPropagation(); onSkip(); };
+    return () => document.removeEventListener("keydown", key, true);
+  },
+  // три примера за девять секунд
+  exam(box) {
+    return new Promise(done => {
+      const body = this.frame(box, tr("Экзамен", "Exam"), tr("Реши три примера, пока не кончилось время. Клавиши 1–4.", "Solve three sums before time runs out. Keys 1–4."));
+      const task = () => {
+        const kid = P.age < 12, op = kid ? pick(["+", "−"]) : pick(["+", "−", "×"]), top = kid ? 10 : 40;
+        let a = 2 + Math.floor(Math.random() * (op === "×" ? 9 : top)), b = 2 + Math.floor(Math.random() * (op === "×" ? 9 : top * .75));
+        if (op === "−" && b > a) [a, b] = [b, a];
+        const ans = op === "+" ? a + b : op === "−" ? a - b : a * b;
+        const opts = new Set([ans]);
+        while (opts.size < 4) opts.add(ans + (Math.floor(Math.random() * 7) - 3 || 4) * (op === "×" ? a > 5 ? 1 : 2 : 1) + (opts.size > 2 ? 10 : 0));
+        return { q: `${a} ${op} ${b}`, ans, opts: [...opts].sort(() => Math.random() - .5) };
+      };
+      const T = 9000, t0 = performance.now();
+      let n = 0, right = 0, cur = task(), over = false;
+      const draw = () => { body.innerHTML = `<div class="mini-q">${cur.q} = ?</div><div class="mini-time"><i></i></div><div class="row mini-opts">${cur.opts.map((o, i) => `<button class="ghost" data-i="${i}">${o}</button>`).join("")}</div><span class="note">${n + 1} / 3</span>`; body.querySelectorAll("button").forEach(b => b.onclick = e => { e.stopPropagation(); answer(+b.dataset.i); }); };
+      const finish = s => { if (over) return; over = true; stop(); done(s); };
+      const answer = i => {
+        if (over || i == null) return;
+        const ok = cur.opts[i] === cur.ans; if (ok) right++;
+        Sound.tone(ok ? 880 : 220, .08, "triangle", .05);
+        if (++n >= 3) return finish(right / 3);
+        cur = task(); draw();
+      };
+      const stop = this.listen(box, answer, () => finish(.5));
+      draw();
+      (function tick(now) {
+        if (over) return;
+        const left = 1 - (now - t0) / T, bar = body.querySelector(".mini-time i");
+        if (bar) bar.style.width = Math.max(0, left * 100) + "%";
+        if (left <= 0) return finish(right / 3);
+        requestAnimationFrame(tick);
+      })(t0);
+    });
+  },
+  // четыре удара: нажми, когда кольцо сожмётся до круга
+  rhythm(box) {
+    return new Promise(done => {
+      const body = this.frame(box, tr("Ритм", "Rhythm"), tr("Нажимай, когда кольцо совпадёт с кругом. Пробел или касание.", "Tap when the ring meets the circle. Space or tap."));
+      body.innerHTML = `<div class="mini-beat"><div class="core"></div><div class="ring"></div><span class="mini-grade"></span></div>`;
+      const ring = body.querySelector(".ring"), grade = body.querySelector(".mini-grade");
+      const BEAT = 900, LEAD = 700, N = 4, t0 = performance.now() + 500;
+      const hits = Array(N).fill(0), taken = Array(N).fill(false);
+      let over = false;
+      const finish = s => { if (over) return; over = true; stop(); done(s); };
+      const tap = () => {
+        if (over) return;
+        const now = performance.now(), i = Math.round((now - t0 - LEAD) / BEAT);
+        if (i < 0 || i >= N || taken[i]) return;
+        const err = Math.abs(now - (t0 + LEAD + i * BEAT));
+        taken[i] = true; hits[i] = Math.max(0, 1 - err / 260);
+        grade.textContent = hits[i] > .75 ? tr("Точно!", "Perfect!") : hits[i] > .35 ? tr("Хорошо", "Good") : tr("Мимо", "Miss");
+        grade.className = "mini-grade show " + (hits[i] > .35 ? "ok" : "no"); void grade.offsetWidth;
+        Sound.tone(hits[i] > .35 ? 660 + i * 110 : 180, .1, "triangle", .06);
+      };
+      body.querySelector(".mini-beat").onpointerdown = e => { e.stopPropagation(); tap(); };
+      const stop = this.listen(box, tap, () => finish(.5));
+      (function frame(now) {
+        if (over) return;
+        const t = now - t0;
+        if (t > LEAD + (N - 1) * BEAT + 400) return finish(hits.reduce((a, b) => a + b, 0) / N);
+        const i = Math.max(0, Math.round((t - LEAD) / BEAT)), phase = (t - LEAD - i * BEAT) / LEAD; // −1…0 до удара
+        const s = t < 0 ? 2.4 : 1 - Math.max(-1.4, Math.min(.2, phase)) * 1;
+        ring.style.transform = `scale(${s.toFixed(3)})`;
+        ring.style.opacity = phase > .15 ? .2 : 1;
+        requestAnimationFrame(frame);
+      })(performance.now());
+    });
+  },
+  // торг: бегунок качается по шкале цен, останови в зелёной зоне
+  haggle(box) {
+    return new Promise(done => {
+      const body = this.frame(box, tr("Торг", "Haggling"), tr("Останови бегунок в зелёной зоне. Пробел или касание.", "Stop the slider in the green zone. Space or tap."));
+      body.innerHTML = `<div class="mini-haggle"><div class="zone"></div><div class="knob"></div></div><div class="row between note"><span>${tr("дорого", "too high")}</span><span>${tr("в самый раз", "just right")}</span><span>${tr("обидно", "insulting")}</span></div>`;
+      const knob = body.querySelector(".knob"), t0 = performance.now();
+      let over = false, x = 0;
+      const finish = s => { if (over) return; over = true; stop(); done(s); };
+      const tap = () => { if (over) return; knob.classList.add("stop"); finish(Math.max(0, 1 - Math.abs(x - .5) * 3.2)); };
+      body.querySelector(".mini-haggle").onpointerdown = e => { e.stopPropagation(); tap(); };
+      const stop = this.listen(box, tap, () => finish(.5));
+      (function frame(now) {
+        if (over) return;
+        const t = (now - t0) / 1000;
+        if (t > 8) return finish(.3);
+        x = .5 + .5 * Math.sin(t * (2.4 + t * .35));
+        knob.style.left = (x * 100).toFixed(1) + "%";
+        requestAnimationFrame(frame);
+      })(t0);
+    });
+  },
+};
+let miniAge = -1;
+
 async function choose(card, opt, btn) {
+  if (btn.classList.contains("chosen")) return;
   skipping = false;
   stage().querySelectorAll(".option").forEach(o => o.classList.add(o === btn ? "chosen" : "dimmed"));
+  const kind = Mini.kind(opt), c0 = chanceOf(P, opt);
+  let mini = null;
+  if (kind && SETTINGS.mini && c0 < 1 && c0 > .08 && miniAge !== P.age && Math.random() < .5) {
+    miniAge = P.age;
+    const sc = await Mini.play(kind, btn);
+    mini = P._mini = Math.round((sc - .5) * 30) / 100;
+  }
   const chance = chanceOf(P, opt);
   const res = resolve(P, card, opt);
+  P._mini = 0;
   // бросок шанса: стрелка пробегает по шкале и останавливается в зелёной зоне или за ней
   if (chance < 1) {
     const roll = document.createElement("div");
@@ -1040,7 +1194,7 @@ async function choose(card, opt, btn) {
   btn.classList.add(res.ok ? "win" : "lose");
   const out = document.createElement("div");
   out.innerHTML = `${chance < 1 ? `<span class="stamp ${res.ok ? "ok" : "no"}">${res.ok ? (chance < .4 ? tr("ПОВЕЗЛО!", "LUCKY!") : tr("ПОЛУЧИЛОСЬ", "SUCCESS")) : tr("НЕ ВЫШЛО", "NO LUCK")}</span>` : ""}
-    ${res.text ? `<span class="result-text">${esc(res.text)}</span>` : ""}${res.changes.length ? chips(res.changes) : ""}`;
+    ${res.text ? `<span class="result-text">${esc(res.text)}</span>` : ""}${res.changes.length ? chips(res.changes) : ""}${mini ? `<span class="note">${tr("мини-игра", "mini-game")}: ${mini > 0 ? "+" : ""}${Math.round(mini * 100)}% ${tr("к шансу", "to the odds")}</span>` : ""}`;
   out.className = "stack"; out.style.gap = "6px";
   btn.appendChild(out);
   updateHud(res.changes); hudReact(res.changes);
