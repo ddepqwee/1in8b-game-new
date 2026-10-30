@@ -80,7 +80,7 @@ window.PART_EN = { "Азия": "Asia", "Америка": "the Americas", "Афр
     fame: ["Become famous", "Fame in sport or art"], one: ["One love for life", "Married with no divorce until 65"],
     world: ["See the world", "Take 3 trips"], give: ["Help your home town", "Build a school or a well back home"],
   };
-  for (const D of window.DREAMS) [D.t, D.d] = DREAMS[D.id];
+  for (const D of window.DREAMS) if (DREAMS[D.id]) [D.t, D.d] = DREAMS[D.id];
 
   const ACH = {
     c100: ["A hundred years", "Live to 100"], c90: ["Long life", "Live to 90"],
@@ -96,7 +96,7 @@ window.PART_EN = { "Азия": "Asia", "Америка": "the Americas", "Афр
     survivor: ["Weathered the storm", "Survive two natural disasters and live to 70"],
     egg: ["Easter egg", "Find the letter you wrote to yourself at fifteen"],
   };
-  for (const A of window.ACHIEVEMENTS) [A.n, A.d] = ACH[A.id];
+  for (const A of window.ACHIEVEMENTS) if (ACH[A.id]) [A.n, A.d] = ACH[A.id];
 
   const kidG = k => k.sex === "f";
   const CARDS = {
