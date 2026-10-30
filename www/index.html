@@ -244,6 +244,56 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border: 1px s
 .log li.rare .ic { background: linear-gradient(135deg, #f6d29a, var(--life)); color: var(--ink); box-shadow: 0 0 14px rgba(242,180,90,.7); }
 .log li.rare > span:last-child { color: var(--life); }
 
+/* ----- second expansion: scenes, flyers, vignette, seasons, life ribbon ----- */
+.scene { position: relative; width: 84px; height: 84px; margin: 2px 0 -4px; display: grid; place-items: center; }
+.scene .glow { position: absolute; inset: 6px; border-radius: 50%; background: radial-gradient(circle, rgba(var(--mood), .35), transparent 70%); animation: breathe 3.2s ease-in-out infinite; }
+.scene .ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(var(--mood), .5); animation: ring 1s cubic-bezier(.2,.8,.2,1) both; }
+.scene .emo { position: relative; font-size: 46px; line-height: 1; animation: scenein .7s cubic-bezier(.2,1.5,.4,1) both, bob 3.4s .7s ease-in-out infinite; filter: drop-shadow(0 6px 14px rgba(0,0,0,.45)); }
+.scene i { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: var(--life); opacity: 0; animation: orbit 2.6s linear infinite; animation-delay: calc(var(--k) * -.87s); }
+@keyframes scenein { from { opacity: 0; transform: scale(.2) rotate(-25deg) translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes bob { 50% { transform: translateY(-5px) rotate(2deg); } }
+@keyframes breathe { 50% { transform: scale(1.18); opacity: .7; } }
+@keyframes ring { from { transform: scale(.4); opacity: 1; } to { transform: scale(1.25); opacity: 0; } }
+@keyframes orbit { 0% { opacity: 0; transform: rotate(0deg) translateX(40px) scale(.4); } 20%, 80% { opacity: .9; } 100% { opacity: 0; transform: rotate(360deg) translateX(40px) scale(1); } }
+.flyer { position: fixed; z-index: 35; left: 0; top: 0; font-size: 44px; pointer-events: none; will-change: transform, opacity; filter: drop-shadow(0 8px 18px rgba(0,0,0,.5)); }
+.trail { position: fixed; z-index: 34; width: 8px; height: 8px; border-radius: 50%; pointer-events: none; background: var(--life); box-shadow: 0 0 12px var(--life); animation: trail 1s ease-out forwards; }
+@keyframes trail { to { opacity: 0; transform: scale(.2); } }
+#vignette { position: fixed; inset: 0; z-index: 15; pointer-events: none; opacity: 0; }
+#vignette.bad { background: radial-gradient(ellipse at center, transparent 45%, rgba(239,138,138,.38)); animation: vig 1.2s ease; }
+#vignette.good { background: radial-gradient(ellipse at center, transparent 45%, rgba(127,209,166,.32)); animation: vig 1.2s ease; }
+#vignette.gold { background: radial-gradient(ellipse at center, transparent 40%, rgba(242,180,90,.4)); animation: vig 1.6s ease; }
+@keyframes vig { 25% { opacity: 1; } 100% { opacity: 0; } }
+.years { display: flex; align-items: center; gap: 12px; }
+.wheel { position: relative; width: 44px; height: 44px; border-radius: 50%; border: 1px dashed var(--line); display: grid; place-items: center; font-size: 24px; transition: transform .14s ease; }
+.wheel.turn { animation: turn .3s cubic-bezier(.2,1.4,.4,1); }
+@keyframes turn { from { transform: rotate(-90deg) scale(.6); opacity: .2; } to { transform: none; opacity: 1; } }
+.cal { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.bar.max .track { box-shadow: 0 0 0 1px var(--life), 0 0 16px rgba(242,180,90,.6); animation: maxglow 1.4s ease; }
+.bar.max .fill { background: linear-gradient(90deg, var(--fg), var(--life), var(--fg)); background-size: 200% 100%; animation: shimmer 1.4s linear; }
+@keyframes maxglow { 30% { box-shadow: 0 0 0 2px var(--life), 0 0 26px rgba(242,180,90,.9); } }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: 0 0; } }
+.bar.crit .fill { background: var(--bad); animation: crit 1s ease-in-out infinite; }
+@keyframes crit { 50% { opacity: .45; } }
+.ecg { width: min(100%, 320px); height: 34px; display: block; }
+.ecg path { fill: none; stroke: var(--life); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 520; stroke-dashoffset: 520; animation: ecg 2.4s .4s ease-out forwards; filter: drop-shadow(0 0 6px rgba(242,180,90,.7)); }
+@keyframes ecg { to { stroke-dashoffset: 0; } }
+.farewell .smoke { position: relative; width: 10px; height: 0; order: -1; animation: none; }
+.farewell .smoke i { position: absolute; left: 0; bottom: 0; width: 10px; height: 10px; border-radius: 50%; background: rgba(233,230,242,.18); filter: blur(3px); opacity: 0; animation: smoke 3s ease-out infinite; animation-delay: calc(2.2s + var(--k) * .9s); }
+@keyframes smoke { 0% { opacity: 0; transform: translate(0, 0) scale(.6); } 20% { opacity: .8; } 100% { opacity: 0; transform: translate(calc(var(--x) * 1px), -70px) scale(2.4); } }
+.ribbon { position: relative; height: 128px; margin: 4px 6px 0; }
+.ribbon .rail { position: absolute; left: 0; right: 0; top: 96px; height: 4px; border-radius: 99px; background: #252e4b; }
+.ribbon .lived { position: absolute; left: 0; top: 96px; height: 4px; width: 0; border-radius: 99px; background: linear-gradient(90deg, #7d6a4a, var(--life)); transition: width 2.6s cubic-bezier(.4,.1,.2,1); }
+.ribbon .dot { position: absolute; top: 91px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--life); box-shadow: 0 0 14px rgba(242,180,90,.9); left: 0; transition: left 2.6s cubic-bezier(.4,.1,.2,1); }
+.ribbon .m { position: absolute; transform: translateX(-50%); display: grid; justify-items: center; gap: 2px; opacity: 0; }
+.ribbon .m span { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; background: #252e4b; border: 1px solid var(--line); }
+.ribbon .m.up span { background: #1f3b31; border-color: #2f5a47; } .ribbon .m.down span { background: #3a2229; border-color: #5e3239; }
+.ribbon .m.star span, .ribbon .m.rare span { background: var(--life); color: var(--ink); box-shadow: 0 0 12px rgba(242,180,90,.7); }
+.ribbon .m.on { animation: stamp .45s cubic-bezier(.2,1.6,.4,1) forwards; }
+.ribbon .m::after { content: ""; width: 1px; height: var(--h, 10px); background: var(--line); }
+.ribbon .ticks { position: absolute; left: 0; right: 0; top: 106px; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.ribbon .ticks span { position: absolute; transform: translateX(-50%); }
+.bubble { position: absolute; padding: 6px 10px; border-radius: 10px; background: var(--raised); border: 1px solid var(--line); font-size: 12px; max-width: 220px; pointer-events: none; z-index: 2; }
+
 @media (min-width: 1100px) and (min-height: 760px) { main { zoom: 1.2; } }
 @media (min-width: 1600px) and (min-height: 1000px) { main { zoom: 1.4; } }
 @media (prefers-reduced-motion: reduce) {
@@ -257,6 +307,7 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border: 1px s
 <div id="settings" role="dialog" aria-modal="true"></div>
 <main id="app" aria-live="polite"></main>
 <div id="overlay" aria-live="assertive"></div>
+<div id="vignette" aria-hidden="true"></div>
 <div id="toasts" aria-live="polite"></div>
 
 <script src="i18n.js"></script>
@@ -625,6 +676,8 @@ function updateHud(changes = []) {
     const from = +n.textContent, to = p.r[k];
     fill.style.width = to + "%";
     row.classList.toggle("low", to < 20);
+    row.classList.toggle("crit", to < 10);
+    if (to >= 95 && from < 95 && from > 0) { row.classList.remove("max"); void row.offsetWidth; row.classList.add("max"); setTimeout(() => row.classList.remove("max"), 1500); Sound.tone(1320, .25, "triangle", .05); }
     if (from !== to) {
       tween(from, to, 700, v => n.textContent = Math.round(v));
       const cls = to > from ? "flash-up" : "flash-down";
@@ -644,12 +697,15 @@ function hudReact(changes) {
   const sum = changes.reduce((s, [, v]) => s + v, 0), hud = document.getElementById("hud");
   if (!hud || REDUCE) return;
   const cls = sum <= -14 ? "hit" : sum >= 16 ? "glow" : null;
-  if (cls) { hud.classList.remove("hit", "glow"); void hud.offsetWidth; hud.classList.add(cls); }
+  if (cls) { hud.classList.remove("hit", "glow"); void hud.offsetWidth; hud.classList.add(cls); vignette(cls === "hit" ? "bad" : "good"); }
 }
+const SEASONS = ["🌱", "☀️", "🍂", "❄️"];
 async function tickAge(from, to) {
-  const el = document.getElementById("h-age");
+  const el = document.getElementById("h-age"), wheel = document.getElementById("wheel"), cal = document.getElementById("cal");
   for (let a = from + 1; a <= to; a++) {
     el.textContent = years(a); el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick");
+    if (wheel) { wheel.textContent = SEASONS[a % 4]; wheel.classList.remove("turn"); void wheel.offsetWidth; wheel.classList.add("turn"); }
+    if (cal) cal.textContent = years(a);
     Sound.tick();
     const pos = Math.min(100, a / TL_MAX * 100) + "%";
     document.getElementById("h-lived").style.width = pos; document.getElementById("h-me").style.left = pos;
@@ -811,7 +867,7 @@ const CHAPTERS = {
 };
 async function chapter(age) {
   const c = CHAPTERS[age]; if (!c) return;
-  Music.chapter(age);
+  Music.chapter(age); window.Field && Field.season(age);
   skipping = false;
   overlay.innerHTML = `<div class="chapter"><span class="num">${c[0]}</span><h1>${c[1]}</h1><div class="line"></div></div>`;
   overlay.classList.add("show"); Sound.chime();
@@ -858,6 +914,7 @@ async function screenBirth() {
   app.innerHTML = `<section class="stack">
     <span class="eyebrow fade">${mode === "daily" ? tr("Рождение дня", "Daily birth") : mode === "challenge" ? tr("Испытание", "Challenge") + ": " + esc(challenge.n) : p.gen > 1 ? tr("Поколение ", "Generation ") + p.gen : tr("Только что", "Just now")} · ${tr(g(p, "мальчик", "девочка"), g(p, "boy", "girl"))}</span>
     <h1 id="b-name">&nbsp;</h1>
+    <svg class="ecg" viewBox="0 0 320 34" aria-hidden="true"><path d="M0 20 H70 L78 20 L84 8 L90 30 L96 4 L102 26 L108 20 H180 L188 20 L194 10 L200 28 L206 6 L212 24 L218 20 H320"/></svg>
     <p class="muted fade" style="--d:2">${c.name}, ${c.partName}. ${tr(`Шанс родиться здесь: 1 из ${fmt(c.odds)}. Семья ${QUINTILE[p.q]} по меркам страны.`, `Odds of being born here: 1 in ${fmt(c.odds)}. A ${QUINTILE[p.q]} family by local standards.`)}</p>
   </section>
   ${challenge ? `<section class="tip fade" style="--d:3"><span class="eyebrow">${esc(challenge.n)}</span><span>${esc(challenge.d)}. ${tr("Цель", "Goal")}: ${esc(challenge.goal)}.</span></section>` : ""}
@@ -885,6 +942,7 @@ async function screenBirth() {
   scrollTo(0, 0);
   document.getElementById("go").onclick = () => { renderGame(); nextStage(); };
   tip("birth", tr("Как устроена игра", "How it works"), tr("Страна, семья и характер выпали по реальной статистике. Ты проживёшь жизнь этапами по пять лет. Чем труднее старт, тем выше множитель очков.", "Your country, family and character were drawn from real statistics. You'll live your life in five-year stages. The harder your start, the higher your score multiplier."), app.querySelector(".panel"));
+  if (!REDUCE) [0, .18, 1.1, 1.28].forEach((d, i) => Sound.tone(i % 2 ? 58 : 72, .14, "sine", .12, .5 + d));
   await typeInto(document.getElementById("b-name"), fullName(p));
 }
 
@@ -929,6 +987,17 @@ function screenFocus() {
   });
 }
 
+// картинка сцены: своя у новых карточек, у старых — по типу первого варианта или по возрасту
+const TAG_ICON = { study: "📚", work: "🛠️", social: "🤝", health: "🫀", rest: "🌿", love: "💞", move: "✈️", risk: "🎲", art: "🎨", music: "🎵", politics: "🏛️", care: "🩹", business: "💼", sport: "⚽" };
+function sceneIcon(card) {
+  if (card.ic) return card.ic;
+  for (const o of card.o) for (const t of o.tags || []) if (TAG_ICON[t]) return TAG_ICON[t];
+  return avatar(P);
+}
+function sceneHTML(card) {
+  return `<div class="scene" aria-hidden="true"><div class="glow"></div>${REDUCE ? "" : `<div class="ring"></div><i style="--k:0"></i><i style="--k:1"></i><i style="--k:2"></i>`}<span class="emo">${sceneIcon(card)}</span></div>`;
+}
+
 function playCard() {
   let card = queue.shift();
   while (card && !eligible(P, card)) card = queue.shift();
@@ -936,7 +1005,7 @@ function playCard() {
   if (!card) return finishStage();
   used.push(card.id);
   const opts = optionsOf(P, card);
-  stage().innerHTML = `<span class="eyebrow enter">${card.t}</span><h2 class="deal">${esc(txt(card.q, P))}</h2>
+  stage().innerHTML = `${sceneHTML(card)}<span class="eyebrow enter">${card.t}</span><h2 class="deal">${esc(txt(card.q, P))}</h2>
   ${opts.map((o, i) => `<button class="option enter" style="--i:${i + 2}" data-i="${i}"><b>${esc(o.l)}</b>${chips(o.yes, chanceOf(P, o))}</button>`).join("")}`;
   Sound.pop();
   if (opts.some(o => chanceOf(P, o) < 1)) tip("chance", tr("Шансы", "Odds"), tr("Процент рядом с вариантом показывает шанс на успех. Он зависит от страны, семьи, характера и твоих шкал. Зелёные цифры ты получишь при успехе.", "The percentage next to an option is your chance of success. It depends on your country, family, character and bars. The green numbers are what you get if it works."), stage());
@@ -980,8 +1049,43 @@ async function choose(card, opt, btn) {
 }
 
 // праздничные моменты: свадьба, ребёнок, диплом, дом, слава
-const FX = { love: "💍", baby: "👶", grad: "🎓", home: "🏠", star: "⭐", gold: "🏅" };
+const FX = { love: "💍", baby: "👶", grad: "🎓", home: "🏠", star: "⭐", gold: "🏅", fire: "🔥", film: "🎬", rocket: "🚀", peace: "🕊️", paw: "🐾", travel: "✈️", money: "🪙", book: "📖", science: "💡" };
+// летящие фигуры: ракета взлетает, самолёт и голубь пересекают экран, монеты падают
+const FLY = {
+  rocket: { e: "🚀", from: [.5, 1.05], to: [.55, -.15], ms: 1800, rot: -45, trail: true },
+  travel: { e: "✈️", from: [-.1, .7], to: [1.1, .2], ms: 2000, rot: 0, trail: true, arc: -.15 },
+  peace: { e: "🕊️", from: [1.1, .55], to: [-.1, .25], ms: 2400, rot: 0, arc: -.1, flip: true },
+  fire: { e: "🚒", from: [-.15, .82], to: [1.15, .82], ms: 1700, rot: 0 },
+  film: { e: "🎬", from: [.5, .5], to: [.5, .5], ms: 900, rot: 0, pop: true },
+  paw: { e: "🐾", from: [-.1, .85], to: [1.1, .6], ms: 2200, rot: 0, hop: true },
+};
+function flyer(kind) {
+  const f = FLY[kind];
+  if (!f || REDUCE) return;
+  const el = document.createElement("div");
+  el.className = "flyer"; el.textContent = f.e; document.body.appendChild(el);
+  const W = innerWidth, H = innerHeight, t0 = performance.now(), ms = speed(f.ms);
+  let lastTrail = 0;
+  (function step(now) {
+    const t = Math.min(1, (now - t0) / ms), e = f.pop ? t : t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    let x = (f.from[0] + (f.to[0] - f.from[0]) * e) * W, y = (f.from[1] + (f.to[1] - f.from[1]) * e) * H;
+    if (f.arc) y += Math.sin(Math.PI * e) * f.arc * H;
+    if (f.hop) y -= Math.abs(Math.sin(e * Math.PI * 6)) * 40;
+    const sc = f.pop ? (t < .3 ? t / .3 * 1.8 : 1.8 - (t - .3) * .6) : 1;
+    el.style.transform = `translate(${x - 22}px, ${y - 22}px) rotate(${f.rot}deg) scale(${f.flip ? -sc : sc}, ${sc})`;
+    el.style.opacity = f.pop ? String(1 - Math.max(0, t - .6) / .4) : "1";
+    if (f.trail && now - lastTrail > 40) { lastTrail = now; const d = document.createElement("div"); d.className = "trail"; d.style.left = x + "px"; d.style.top = y + 18 + "px"; document.body.appendChild(d); setTimeout(() => d.remove(), 1000); }
+    if (t < 1) requestAnimationFrame(step); else el.remove();
+  })(t0);
+}
+function vignette(kind) {
+  const v = document.getElementById("vignette");
+  if (!v || REDUCE) return;
+  v.className = ""; void v.offsetWidth; v.className = kind;
+}
 function celebrate(kind) {
+  flyer(kind); vignette("gold");
+  if (kind === "rocket" || kind === "gold") window.Field && Field.burst();
   if (REDUCE || typeof confetti !== "function") return;
   try {
     const shapes = confetti.shapeFromText ? [confetti.shapeFromText({ text: FX[kind] || "✨", scalar: 2.2 })] : undefined;
@@ -1006,7 +1110,7 @@ async function finishStage() {
   const before = { ...P.r };
   liveStage(P);
   const to = P.alive ? P.age : P.age;
-  stage().innerHTML = `<span class="eyebrow">${from}–${P.alive ? P.age - 1 : P.age}</span><h2>${P.alive ? tr("Проходят годы…", "The years go by…") : tr("Последние годы", "The final years")}</h2>`;
+  stage().innerHTML = `<span class="eyebrow">${from}–${P.alive ? P.age - 1 : P.age}</span><div class="years"><div class="wheel" id="wheel" aria-hidden="true">${SEASONS[from % 4]}</div><div class="stack" style="gap:2px"><h2>${P.alive ? tr("Проходят годы…", "The years go by…") : tr("Последние годы", "The final years")}</h2><span class="cal" id="cal"></span></div></div>`;
   await tickAge(from, to);
   const changes = RES.map(([k]) => [k, P.r[k] - before[k]]).filter(([, v]) => v);
   updateHud(changes); hudReact(changes);
@@ -1015,8 +1119,8 @@ async function finishStage() {
     <ul class="log">${items.length ? items.map(([c, s, , evIc, rare], i) => { const [cl, ic] = iconFor(c, s, evIc); return `<li class="${cl}${rare ? " rare" : ""} pop" style="--i:${i}"><span class="ic">${ic}</span><span>${esc(s)}</span></li>`; }).join("") : `<li class="pop"><span class="ic">·</span><span>${tr("Обычные годы, без больших перемен.", "Ordinary years, nothing big changed.")}</span></li>`}</ul></div>`;
   const seenRare = load("lottery.rares", []);
   items.forEach(([c, s, , , rare], i) => setTimeout(() => {
-    if (DREAM_RE.test(s)) { Sound.great(); burst({ particleCount: 140, spread: 100 }); toast(tr("Мечта сбылась!", "Dream come true!"), P.dream.t); }
-    else if (rare) { Sound.chime(); burst({ particleCount: 50, colors: ["#f6d29a", "#f2b45a", "#ffffff"] }); toast(tr("Редкий момент", "A rare moment"), seenRare.length ? "" : tr("Он попадёт в энциклопедию", "It goes into your codex")); }
+    if (DREAM_RE.test(s)) { Sound.great(); burst({ particleCount: 140, spread: 100 }); vignette("gold"); flyer("film"); toast(tr("Мечта сбылась!", "Dream come true!"), P.dream.t); }
+    else if (rare) { Sound.chime(); vignette("gold"); window.Field && Field.burst(); burst({ particleCount: 50, colors: ["#f6d29a", "#f2b45a", "#ffffff"] }); toast(tr("Редкий момент", "A rare moment"), seenRare.length ? "" : tr("Он попадёт в энциклопедию", "It goes into your codex")); }
     else c === "down" ? Sound.tone(260, .12, "triangle", .04) : Sound.tone(660, .1, "triangle", .04);
   }, REDUCE ? 0 : i * 380));
   achievementToasts();
@@ -1044,7 +1148,7 @@ async function farewell() {
   document.body.classList.add("dim");
   window.Field && Field.fade();
   Sound.death(); buzz("heavy"); Music.stop(2.5);
-  overlay.innerHTML = `<div class="farewell"><div class="candle"></div><h2>${esc(fullName(P))}</h2><p class="age">${years(P.age)}</p><p class="muted">${esc(P.cause[0].toUpperCase() + P.cause.slice(1))}.</p></div>`;
+  overlay.innerHTML = `<div class="farewell"><div class="candle"></div><h2>${esc(fullName(P))}</h2><p class="age">${years(P.age)}</p><p class="muted">${esc(P.cause[0].toUpperCase() + P.cause.slice(1))}.</p><div class="smoke" aria-hidden="true">${[0, 1, 2].map(k => `<i style="--k:${k};--x:${[-14, 10, -4][k]}"></i>`).join("")}</div></div>`;
   overlay.classList.add("show");
   await sleep(3600);
   overlay.classList.remove("show");
@@ -1138,6 +1242,7 @@ async function screenEnd() {
     <div class="race">${all.map(({ t, me }) => `<div class="lane ${me ? "me" : ""}"><div class="top"><span>${esc(fullName(t))}${me ? tr(" (ты)", " (you)") : ""}, ${t.home.name}${t.f.emigrated && !t.f.returned ? " → " + t.c.name : ""}</span><span>${years(t.age)}${t.dreamDone ? tr(" · мечта ✓", " · dream ✓") : ""}</span></div><div class="track"><div class="run" data-w="${Math.min(100, t.age / 105 * 100)}"></div></div></div>`).join("")}</div>
   </section>
   ${shown.length ? `<section class="panel fade" style="--d:7"><span class="eyebrow">${tr("Достижения этой жизни", "Achievements this life")}</span><div class="badges">${shown.map((id, i) => { const a = ACHIEVEMENTS.find(x => x.id === id); return `<span class="badge ${fresh.includes(id) ? "new" : "on"}" style="--i:${i}" title="${esc(a.d)}">${a.n}${fresh.includes(id) ? tr(" · новое", " · new") : ""}</span>`; }).join("")}</div></section>` : ""}
+  ${ribbonHTML(p)}
   ${p.log.length ? `<section class="panel fade" style="--d:8"><span class="eyebrow">${tr("Биография", "Life story")}</span><ul class="log">${p.log.map(([c, s, a, evIc, rare]) => { const [cl, ic] = iconFor(c, s, evIc); return `<li class="${cl}${rare ? " rare" : ""}"><span class="ic">${ic}</span><span><span class="y">${a}</span>${esc(s)}</span></li>`; }).join("")}</ul></section>` : ""}
   <div class="row fade" style="--d:9"><button id="again" class="big pulse">${tr("Родиться снова", "Be born again")}</button><button id="copy" class="ghost">${tr("Скопировать результат", "Copy result")}</button><button id="home" class="ghost">${tr("В начало", "Home")}</button></div>
   <p class="note" id="share">${esc(share)}</p>`;
@@ -1155,10 +1260,37 @@ async function screenEnd() {
   setTimeout(() => { newEnding ? Sound.great() : Sound.chime(); if (newEnding) burst({ particleCount: 80, spread: 70, origin: { y: .3 } }); Music.start(); }, REDUCE ? 0 : 700);
   await sleep(900);
   requestAnimationFrame(() => document.querySelectorAll(".run").forEach(r => r.style.width = r.dataset.w + "%"));
+  playRibbon();
   let lastTick = 0;
   await tween(0, s, 1600, v => { document.getElementById("score").textContent = fmt(Math.round(v)); const now = performance.now(); if (now - lastTick > 70) { lastTick = now; Sound.tick(); } });
   if (p.dreamDone || fresh.length || chalReward || (s > best && lives.length > 1)) { Sound.great(); burst({ particleCount: 120, spread: 90 }); }
   await animateXP(xp0, xp0 + gained);
+}
+// лента жизни: главные моменты на шкале возраста, огонёк пробегает от рождения до конца
+function ribbonHTML(p) {
+  if (p.log.length < 3) return "";
+  const max = Math.max(p.age, 10);
+  let marks = p.log.map(([c, s, a, ic, rare]) => { const [cl, i] = iconFor(c, s, ic); return { cl: cl + (rare ? " rare" : ""), i, s, a, w: (rare ? 3 : 0) + (cl === "star" ? 3 : 0) + (ic ? 1 : 0) }; });
+  if (marks.length > 26) marks = marks.slice().sort((x, y) => y.w - x.w).slice(0, 26);
+  marks.sort((x, y) => x.a - y.a);
+  const rows = [-99, -99, -99];
+  const html = marks.map(m => {
+    const x = Math.min(100, m.a / max * 100);
+    let r = rows.findIndex(v => x - v >= 7); if (r < 0) r = rows.indexOf(Math.min(...rows));
+    rows[r] = x;
+    const h = 6 + r * 30;
+    return `<div class="m ${m.cl}" data-x="${x}" style="left:${x}%;top:${66 - h}px;--h:${h}px" title="${esc(m.a + ": " + m.s)}"><span>${m.i}</span></div>`;
+  }).join("");
+  const ticks = [0, .25, .5, .75, 1].map(t => `<span style="left:${t * 100}%">${Math.round(t * max)}</span>`).join("");
+  return `<section class="panel fade" style="--d:7"><span class="eyebrow">${tr("Лента жизни", "Life ribbon")}</span>
+    <div class="ribbon" id="ribbon"><div class="rail"></div><div class="lived"></div><div class="dot"></div>${html}<div class="ticks">${ticks}</div></div></section>`;
+}
+function playRibbon() {
+  const rb = document.getElementById("ribbon"); if (!rb) return;
+  const marks = [...rb.querySelectorAll(".m")];
+  if (REDUCE) { marks.forEach(m => m.style.opacity = 1); rb.querySelector(".lived").style.width = "100%"; rb.querySelector(".dot").style.left = "100%"; return; }
+  rb.querySelector(".lived").style.width = "100%"; rb.querySelector(".dot").style.left = "100%";
+  marks.forEach(m => setTimeout(() => { m.classList.add("on"); Sound.tone(700 + +m.dataset.x * 6, .05, "triangle", .025); }, speed(2600) * (+m.dataset.x / 100) ** .8));
 }
 // опыт заполняет шкалу; на каждом новом уровне — вспышка и список того, что открылось
 async function animateXP(from, to) {
@@ -1185,7 +1317,43 @@ function selectShare() { const r = document.createRange(); r.selectNodeContents(
 // ---------- Фон: рождения как вспышки ----------
 window.Field = (function field() {
   const cv = document.getElementById("field"), ctx = cv.getContext("2d");
-  let dots = [], W = 0, H = 0, faded = false, rings = [];
+  let dots = [], W = 0, H = 0, faded = false, rings = [], mode = 0, extra = [], comet = null;
+  // частицы главы жизни: пузырьки детства, светлячки юности, звёзды взрослых лет, кометы зрелости, листья старости, снег долгого вечера
+  const MODES = { 0: "bubbles", 15: "fireflies", 25: "stars", 45: "comets", 65: "leaves", 85: "snow" };
+  function spawn(kind, init) {
+    const x = Math.random() * W, y = init ? Math.random() * H : kind === "bubbles" ? H + 10 : -10;
+    if (kind === "bubbles") return { kind, x, y, r: 2 + Math.random() * 5, vy: -(.2 + Math.random() * .35), ph: Math.random() * 6.28, a: .12 + Math.random() * .2 };
+    if (kind === "fireflies") return { kind, x, y: Math.random() * H, vx: 0, vy: 0, ph: Math.random() * 6.28, a: 0 };
+    if (kind === "leaves") return { kind, x, y, r: 3 + Math.random() * 3, vy: .35 + Math.random() * .45, ph: Math.random() * 6.28, rot: Math.random() * 6.28, hue: [28, 18, 40, 8][Math.floor(Math.random() * 4)] };
+    if (kind === "snow") return { kind, x, y, r: .8 + Math.random() * 2, vy: .25 + Math.random() * .5, ph: Math.random() * 6.28 };
+    return null;
+  }
+  function setMode(age) {
+    const kind = MODES[age] || "stars"; mode = kind;
+    const n = { bubbles: 26, fireflies: 22, leaves: 24, snow: 70 }[kind] || 0;
+    extra = REDUCE ? [] : Array.from({ length: n }, () => spawn(kind, true));
+  }
+  function drawExtra() {
+    for (let i = 0; i < extra.length; i++) {
+      const d = extra[i]; d.ph += .02;
+      if (d.kind === "bubbles") { d.y += d.vy; d.x += Math.sin(d.ph) * .3; if (d.y < -10) extra[i] = spawn("bubbles");
+        ctx.strokeStyle = `rgba(160,200,255,${d.a})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 6.283); ctx.stroke(); }
+      else if (d.kind === "fireflies") { d.vx = clamp(d.vx + (Math.random() - .5) * .08, -.5, .5); d.vy = clamp(d.vy + (Math.random() - .5) * .08, -.5, .5); d.x = (d.x + d.vx + W) % W; d.y = (d.y + d.vy + H) % H;
+        const a = Math.max(0, Math.sin(d.ph * 1.3)) * .8; ctx.fillStyle = `rgba(220,255,140,${a})`; ctx.shadowColor = "rgba(220,255,140,.9)"; ctx.shadowBlur = 8; ctx.beginPath(); ctx.arc(d.x, d.y, 1.8, 0, 6.283); ctx.fill(); ctx.shadowBlur = 0; }
+      else if (d.kind === "leaves") { d.y += d.vy; d.x += Math.sin(d.ph) * .8; d.rot += .02; if (d.y > H + 10) extra[i] = spawn("leaves");
+        ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.rot); ctx.fillStyle = `hsla(${d.hue},70%,55%,.45)`; ctx.beginPath(); ctx.ellipse(0, 0, d.r * 1.8, d.r, 0, 0, 6.283); ctx.fill(); ctx.restore(); }
+      else if (d.kind === "snow") { d.y += d.vy; d.x += Math.sin(d.ph) * .4; if (d.y > H + 5) extra[i] = spawn("snow");
+        ctx.fillStyle = "rgba(240,244,255,.55)"; ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 6.283); ctx.fill(); }
+    }
+    if (mode === "comets" && !comet && Math.random() < .004) comet = { x: Math.random() * W * .7, y: Math.random() * H * .4, vx: 6 + Math.random() * 4, vy: 2 + Math.random() * 2, life: 1 };
+    if (comet) {
+      comet.x += comet.vx; comet.y += comet.vy; comet.life -= .012;
+      const g = ctx.createLinearGradient(comet.x, comet.y, comet.x - comet.vx * 14, comet.y - comet.vy * 14);
+      g.addColorStop(0, `rgba(255,240,210,${comet.life})`); g.addColorStop(1, "rgba(255,240,210,0)");
+      ctx.strokeStyle = g; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(comet.x, comet.y); ctx.lineTo(comet.x - comet.vx * 14, comet.y - comet.vy * 14); ctx.stroke();
+      if (comet.life <= 0 || comet.x > W + 50) comet = null;
+    }
+  }
   function size() { const r = devicePixelRatio || 1; W = innerWidth; H = innerHeight; cv.width = W * r; cv.height = H * r; ctx.setTransform(r, 0, 0, r, 0, 0);
     dots = Array.from({ length: Math.round(W * H / 2600) }, () => ({ x: Math.random() * W, y: Math.random() * H, a: Math.random() * .5 + .1, f: 0, vy: -(Math.random() * .08 + .02) })); }
   function draw() {
@@ -1198,6 +1366,7 @@ window.Field = (function field() {
     }
     rings = rings.filter(r => r.a > 0);
     for (const r of rings) { r.r += 3.2; r.a -= .012; ctx.strokeStyle = `rgba(242,180,90,${r.a})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, 6.283); ctx.stroke(); }
+    if (!faded && !REDUCE) drawExtra();
     if (!REDUCE) requestAnimationFrame(draw);
   }
   size(); addEventListener("resize", size);
@@ -1206,7 +1375,8 @@ window.Field = (function field() {
   return {
     burst() { rings.push({ x: W / 2, y: H * .4, r: 10, a: .8 }, { x: W / 2, y: H * .4, r: 0, a: .5 }); dots.slice(0, 60).forEach(d => d.f = 1); },
     fade() { faded = true; },
-    restore() { faded = false; },
+    restore() { faded = false; setMode(25); },
+    season(age) { setMode(age); },
   };
 })();
 

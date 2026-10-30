@@ -209,7 +209,7 @@ function resolve(p, card, opt) {
   if (!ok && opt.setNo) opt.setNo(p);
   if (wasIll && !p.f.ill && ok) p.f.illCount = (p.f.illCount || 0) + 1;
   const text = txt(ok ? opt.ys : opt.ns, p);
-  if (text) p.log.push([ok ? "up" : "down", `${card.t}: ${text}`, p.age]);
+  if (text) p.log.push([ok ? "up" : "down", `${card.t}: ${text}`, p.age, card.ic]);
   p.seen[card.id] = p.age;
   return { ok, changes, text, chance };
 }
