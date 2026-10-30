@@ -327,6 +327,7 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border: 1px s
 <script src="data/content-meta.js"></script>
 <script src="data/content-legacy.js"></script>
 <script src="data/content-eras.js"></script>
+<script src="data/content-arcs.js"></script>
 <script src="data/names-en.js"></script>
 <script src="data/lang-en.js"></script>
 <script src="engine.js"></script>
@@ -747,7 +748,7 @@ function bindCollections() {
   box.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { colTab = b.dataset.tab; box.innerHTML = collectionsHTML(); bindCollections(); });
 }
 // снимок родителя, чтобы продолжить род даже после перезапуска игры
-function heirSnapshot(p) { return { cn: p.c.n, r: p.r, peak: p.peak, fam: p.fam, partner: p.partner, traits: p.traits, kids: p.kids, sex: p.sex, first: p.first, last: p.last, order: p.order, f: heirFlags(p), born: p.born, gen: p.gen || 1, friend: p.friend, rival: p.rival }; }
+function heirSnapshot(p) { return { cn: p.c.n, r: p.r, peak: p.peak, fam: p.fam, partner: p.partner, traits: p.traits, kids: p.kids, sex: p.sex, first: p.first, last: p.last, order: p.order, f: heirFlags(p), born: p.born, gen: p.gen || 1, friend: p.friend, rival: p.rival, rep: window.REP_OF ? REP_OF(p) : 0 }; }
 // что переходит детям: дом, семейное дело, реликвия, слава рода
 const HEIR_F = ["house", "biz", "bizMax", "restaurant", "shopChain", "hostel", "vetClinic", "captain", "heirloom", "treasure", "famous", "farmLand", "landDone", "philanthropy", "honored", "relic"];
 function heirFlags(p) { const f = {}; for (const k of HEIR_F) if (p.f[k]) f[k] = p.f[k]; f.job = p.job; f.jobsHeld = p.f.jobsHeld; return f; }
