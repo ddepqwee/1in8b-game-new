@@ -101,6 +101,13 @@ button.big { font-size: 18px; padding: 16px 26px; }
 .mini-haggle .knob.stop { background: var(--life); }
 .mini-skip { padding: 4px 12px; font-size: 13px; }
 .mini-res { font-size: 20px; text-align: center; display: block; }
+.ftree { display: flex; flex-direction: column; align-items: center; padding: 6px 0; }
+.tnode { border: 1px solid rgba(233,230,242,.18); border-radius: 12px; padding: 6px 12px; text-align: center; display: flex; flex-direction: column; animation: in .45s calc(.4s + var(--i) * .22s) both; }
+.tnode.me { border-color: var(--life); box-shadow: 0 0 18px -6px var(--life); }
+.tnode.kid { padding: 4px 10px; font-size: 14px; }
+.tlink { width: 2px; height: 18px; background: rgba(233,230,242,.3); transform-origin: top; animation: tlink .3s calc(.3s + var(--i) * .22s) both; }
+.tkids { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding-top: 10px; border-top: 2px solid rgba(233,230,242,.3); animation: in .4s calc(.3s + var(--i) * .22s) both; }
+@keyframes tlink { from { transform: scaleY(0); } }
 .globe { display: block; margin: 0 auto 4px; }
 .stamp.ok { color: var(--good); } .stamp.no { color: var(--bad); }
 @keyframes stamp { from { opacity: 0; transform: scale(1.8); } to { opacity: 1; transform: none; } }
@@ -257,7 +264,8 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border: 1px s
 @keyframes hit { 15% { transform: translate(-6px, 2px); } 30% { transform: translate(5px, -2px); } 45% { transform: translate(-4px, 1px); } 60% { transform: translate(3px, 0); } }
 .hud.glow { animation: glow 1.1s ease; }
 @keyframes glow { 30% { box-shadow: 0 0 40px -6px rgba(127,209,166,.6); border-color: var(--good); } }
-.avatar { display: inline-block; margin-right: 6px; }
+.avatar { display: inline-block; margin-right: 6px; vertical-align: middle; width: 34px; height: 34px; border-radius: 50%; background: rgba(233,230,242,.07); overflow: hidden; }
+.avatar svg { display: block; transition: opacity .3s; }
 .avatar.grow { animation: stamp .5s cubic-bezier(.2,1.6,.4,1) both; }
 .log li.rare .ic { background: linear-gradient(135deg, #f6d29a, var(--life)); color: var(--ink); box-shadow: 0 0 14px rgba(242,180,90,.7); }
 .log li.rare > span:last-child { color: var(--life); }
@@ -687,8 +695,12 @@ function updateHud(changes = []) {
   document.getElementById("h-dream").innerHTML = p.dream ? `<span class="eyebrow">${tr("Мечта", "Dream")}</span><span class="dream ${p.dreamDone ? "done" : ""}">${p.dreamDone ? "✓ " : ""}${p.dream.t}</span><span class="note">${p.dream.d}</span>` : "";
   const fam = familyLine(p), job = jobLine(p);
   document.getElementById("h-facts").innerHTML = `${job ? `<span>${job}</span>` : ""}${fam ? `<span>${esc(fam)}</span>` : ""}${challenge ? `<span>${tr("цель", "goal")}: ${esc(challenge.goal.toLowerCase())}${challenge.ok(p) ? " ✓" : ""}</span>` : ""}`;
-  const ava = document.getElementById("h-ava"), face = avatar(p);
-  if (ava.textContent !== face) { ava.textContent = face; ava.classList.remove("grow"); void ava.offsetWidth; ava.classList.add("grow"); }
+  const ava = document.getElementById("h-ava"), face = portrait(p), key = ava.dataset.k;
+  if (key !== face.k) {
+    const grown = key && key.split("|")[0] !== face.k.split("|")[0];
+    ava.innerHTML = face.svg; ava.dataset.k = face.k;
+    if (grown) { ava.classList.remove("grow"); void ava.offsetWidth; ava.classList.add("grow"); }
+  }
   const pos = Math.min(100, p.age / TL_MAX * 100) + "%";
   document.getElementById("h-lived").style.width = pos;
   document.getElementById("h-me").style.left = pos;
@@ -710,6 +722,36 @@ function updateHud(changes = []) {
     if (d) { const el = document.createElement("span"); el.className = "delta " + (d > 0 ? "up" : "down"); el.textContent = (d > 0 ? "+" : "") + d; row.appendChild(el); setTimeout(() => el.remove(), 1400); }
   }
   setMood(p);
+}
+// портрет в HUD стареет вместе с тобой: волосы седеют, появляются морщины и очки, улыбка следует за счастьем
+const SKIN = { "Африка": ["#8d5a3b", "#6e4429", "#a8704b"], "Азия": ["#e0b48c", "#c99a6e", "#b07a52"], "Европа": ["#f1cfb3", "#e8bc9a", "#d9a982"], "Америка": ["#d9a982", "#b9845c", "#f1cfb3"], "Океания": ["#b07a52", "#d9a982", "#8d5a3b"] };
+const HAIR = ["#2b1d16", "#3b2a1f", "#5a3b24", "#1b1b1f", "#8a5a2e", "#b98a4e", "#9c3e22"];
+function portrait(p) {
+  const h = hashStr(p.first + p.last), a = p.age, f = p.sex === "f";
+  const skins = SKIN[p.home.part] || SKIN["Азия"], skin = skins[h % skins.length];
+  const grey = a < 40 ? 0 : Math.min(1, (a - 40) / 35), base = HAIR[(h >>> 3) % (p.home.part === "Европа" || p.home.part === "Америка" ? HAIR.length : 4)];
+  const mix = (c1, c2, t) => "#" + [1, 3, 5].map(i => Math.round(parseInt(c1.slice(i, i + 2), 16) * (1 - t) + parseInt(c2.slice(i, i + 2), 16) * t).toString(16).padStart(2, "0")).join("");
+  const hair = mix(base, "#d8d8dc", grey * .9), j = p.r.j;
+  const baby = a < 3, kid = a < 13, bald = !f && a >= 55 && h % 3 === 0;
+  const mouth = j >= 60 ? "M17 27 Q22 31 27 27" : j >= 35 ? "M18 28 L26 28" : "M17 29 Q22 25.5 27 29";
+  const glasses = p.f.glasses || (a >= 60 && h % 2 === 0);
+  const beard = !f && a >= 22 && (h >>> 5) % 4 === 0;
+  const k = [baby ? 0 : kid ? 1 : a < 25 ? 2 : a < 45 ? 3 : a < 60 ? 4 : a < 75 ? 5 : 6, j >= 60 ? 2 : j >= 35 ? 1 : 0, glasses ? 1 : 0].join("|");
+  const sc = baby ? .78 : kid ? .88 : 1;
+  const svg = `<svg viewBox="0 0 44 44" width="34" height="34" aria-hidden="true"><g transform="translate(22 24) scale(${sc}) translate(-22 -24)">
+    ${f && !baby ? `<path d="M9 22 Q8 8 22 7 Q36 8 35 22 L36 ${a >= 60 ? 30 : 38} Q22 ${a >= 60 ? 33 : 41} 8 ${a >= 60 ? 30 : 38} Z" fill="${hair}"/>` : ""}
+    <ellipse cx="22" cy="23" rx="11" ry="12.5" fill="${skin}"/>
+    ${baby ? `<path d="M20 11 Q22 8 24 11" stroke="${hair}" stroke-width="1.4" fill="none"/>` : bald ? `<path d="M11 20 Q10 13 13 15 M33 20 Q34 13 31 15" stroke="${hair}" stroke-width="2.4" fill="none" stroke-linecap="round"/>` : `<path d="M10.5 21 Q10 9.5 22 9.5 Q34 9.5 33.5 21 Q31 13 22 14 Q14 13.5 10.5 21 Z" fill="${hair}"/>`}
+    ${beard ? `<path d="M12 26 Q13 37 22 37 Q31 37 32 26 Q28 32 22 32 Q16 32 12 26 Z" fill="${hair}"/>` : ""}
+    <circle cx="17.5" cy="22" r="1.3" fill="#1a1420"/><circle cx="26.5" cy="22" r="1.3" fill="#1a1420"/>
+    ${baby || kid ? `<circle cx="14.5" cy="27" r="2" fill="#e8807a" opacity=".35"/><circle cx="29.5" cy="27" r="2" fill="#e8807a" opacity=".35"/>` : ""}
+    ${a >= 45 ? `<path d="M17 15.5 Q22 14.5 27 15.5" stroke="#000" stroke-opacity=".22" stroke-width=".7" fill="none"/>` : ""}
+    ${a >= 60 ? `<path d="M13 21 l-1.6 -.8 M13 23 l-1.8 .2 M31 21 l1.6 -.8 M31 23 l1.8 .2" stroke="#000" stroke-opacity=".25" stroke-width=".6"/><path d="M16 30 Q15 28 15.5 26 M28 30 Q29 28 28.5 26" stroke="#000" stroke-opacity=".18" stroke-width=".6" fill="none"/>` : ""}
+    ${a >= 75 ? `<path d="M16.5 17.5 Q22 16.5 27.5 17.5" stroke="#000" stroke-opacity=".18" stroke-width=".6" fill="none"/>` : ""}
+    ${glasses ? `<g fill="none" stroke="#2a2633" stroke-width="1"><circle cx="17.5" cy="22" r="3.4"/><circle cx="26.5" cy="22" r="3.4"/><path d="M20.9 22 h2.2"/></g>` : ""}
+    <path d="${mouth}" stroke="#6b2e2e" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+  </g></svg>`;
+  return { svg, k };
 }
 function avatar(p) {
   const a = p.age, f = p.sex === "f";
@@ -1423,6 +1465,7 @@ async function screenEnd() {
     <div class="race">${all.map(({ t, me }) => `<div class="lane ${me ? "me" : ""}"><div class="top"><span>${esc(fullName(t))}${me ? tr(" (ты)", " (you)") : ""}, ${t.home.name}${t.f.emigrated && !t.f.returned ? " → " + t.c.name : ""}</span><span>${years(t.age)}${t.dreamDone ? tr(" · мечта ✓", " · dream ✓") : ""}</span></div><div class="track"><div class="run" data-w="${Math.min(100, t.age / 105 * 100)}"></div></div></div>`).join("")}</div>
   </section>
   ${shown.length ? `<section class="panel fade" style="--d:7"><span class="eyebrow">${tr("Достижения этой жизни", "Achievements this life")}</span><div class="badges">${shown.map((id, i) => { const a = ACHIEVEMENTS.find(x => x.id === id); return `<span class="badge ${fresh.includes(id) ? "new" : "on"}" style="--i:${i}" title="${esc(a.d)}">${a.n}${fresh.includes(id) ? tr(" · новое", " · new") : ""}</span>`; }).join("")}</div></section>` : ""}
+  ${treeHTML(dyn, p)}
   ${ribbonHTML(p)}
   ${p.log.length ? `<section class="panel fade" style="--d:8"><span class="eyebrow">${tr("Биография", "Life story")}</span><ul class="log">${p.log.map(([c, s, a, evIc, rare]) => { const [cl, ic] = iconFor(c, s, evIc); return `<li class="${cl}${rare ? " rare" : ""}"><span class="ic">${ic}</span><span><span class="y">${a}</span>${esc(s)}</span></li>`; }).join("")}</ul></section>` : ""}
   <div class="row fade" style="--d:9"><button id="again" class="big pulse">${tr("Родиться снова", "Be born again")}</button><button id="copy" class="ghost">${tr("Скопировать результат", "Copy result")}</button><button id="home" class="ghost">${tr("В начало", "Home")}</button></div>
@@ -1448,6 +1491,16 @@ async function screenEnd() {
   await animateXP(xp0, xp0 + gained);
 }
 // лента жизни: главные моменты на шкале возраста, огонёк пробегает от рождения до конца
+// древо рода в конце жизни: предки сверху вниз, ты, дети веточками; узлы появляются по очереди
+function treeHTML(dyn, p) {
+  const line = (dyn.line || []).slice(-5), kids = p.kids.slice(0, 8);
+  if (line.length < 2 && !kids.length) return "";
+  let i = 0;
+  const node = (m, me) => `<div class="tnode ${me ? "me" : ""}" style="--i:${i++}"><b>${esc(m.n)}</b><span class="note">${esc(countryName(m.c))} · ${years(m.a)}</span></div>`;
+  const rows = line.map((m, k) => (k ? `<div class="tlink" style="--i:${i}"></div>` : "") + node(m, k === line.length - 1)).join("");
+  const kidRow = kids.length ? `<div class="tlink" style="--i:${i}"></div><div class="tkids" style="--i:${i}">${kids.map(k => `<div class="tnode kid" style="--i:${++i}"><b>${esc(k.first)}</b><span class="note">${kidLabel(k)}${p.born ? ` · ${p.born + k.born}` : ""}</span></div>`).join("")}</div>` : "";
+  return `<section class="panel fade" style="--d:7"><span class="eyebrow">${tr("Древо рода", "Family tree")} ${esc(dyn.name)}${line.length > 1 ? ` · ${tr("поколений", "generations")}: ${dyn.gen}` : ""}</span><div class="ftree">${rows}${kidRow}</div></section>`;
+}
 function ribbonHTML(p) {
   if (p.log.length < 3) return "";
   const max = Math.max(p.age, 10);

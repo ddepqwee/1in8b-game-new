@@ -74,7 +74,7 @@ window.CARDS.push(
   { id: "friendmend", ic: "🤝", from: 40, to: 75, if: p => p.friend && p.friend.alive && p.f.friendRift === "open" && !p.f.friendMend, prio: true, t: L("Вторая попытка", "Second try"), q: p => L(`Ты стоишь у двери ${fr(p)} с бутылкой и старой фотографией.`, `You're at ${fr(p)}'s door with a bottle and an old photo.`), o: [
     { l: L("Постучать", "Knock"), tags: ["social"], ch: () => .8, yes: { t: 10, j: 10 }, no: { j: -6 }, ys: L("Обнялись прямо на пороге.", "You hugged right there on the doorstep."), ns: L("Дома никого. Ты оставил фото под дверью.", "No one home. You left the photo under the door."), set: p => { p.f.friendMend = true; p.f.friendRift = "mend"; }, setNo: p => p.f.friendMend = true },
   ]},
-  { id: "godparent", ic: "🍼", from: 25, to: 50, if: p => p.friend && p.friend.alive && !p.friend.lost && !p.f.godparent, w: 1, t: L("Крёстный", "Godparent"), q: p => L(`У ${fr(p)} родился ребёнок. Тебя просят стать для него вторым родителем, если что.`, `${fr(p)} had a baby. They ask you to be the guardian, just in case.`), o: [
+  { id: "godfriend", ic: "🍼", from: 25, to: 50, if: p => p.friend && p.friend.alive && !p.friend.lost && !p.f.godparent, w: 1, t: L("Крёстный", "Godparent"), q: p => L(`У ${fr(p)} родился ребёнок. Тебя просят стать для него вторым родителем, если что.`, `${fr(p)} had a baby. They ask you to be the guardian, just in case.`), o: [
     { l: L("Согласиться", "Say yes"), tags: ["care"], ch: () => 1, yes: { t: 8, j: 6 }, ys: L("Маленькая ладонь сжала твой палец.", "A tiny hand gripped your finger."), set: p => p.f.godparent = p.age },
     { l: L("Отказаться: не готов", "Decline: not ready"), ch: () => 1, yes: { t: -4 }, ys: L("Друг понял. Или сделал вид.", "Your friend understood. Or pretended to.") },
   ]},
@@ -124,7 +124,7 @@ window.CARDS.push(
     { l: L("Посадить и поливать", "Plant it and water it"), tags: ["care"], ch: () => .75, yes: { j: 5, h: 1 }, no: { j: -2 }, ys: L("Ростом с карандаш. Но живой.", "Pencil-sized. But alive."), ns: L("Засох за лето. Ты посадишь другой.", "It dried out over the summer. You'll plant another."), set: p => p.f.tree = p.age },
     { l: L("Отдать соседям", "Give it to the neighbors"), ch: () => 1, yes: { t: 2 }, ys: L("Пусть растёт у них.", "Let it grow at their place.") },
   ]},
-  { id: "treegrown", ic: "🌳", from: 30, to: 99, if: p => since(p, "tree") >= 25 && !p.f.treeGrown, w: 2, t: L("Дуб", "The oak"), q: p => L(`Дуб, который ты посадил в ${p.f.tree}, выше крыши. В его тени играют чужие дети.`, `The oak you planted at ${p.f.tree} is taller than the roof. Strangers' kids play in its shade.`), o: [
+  { id: "treegrown", ic: "🌳", from: 30, to: 99, if: p => since(p, "tree") >= 25 && !p.f.treeGrown, w: 2, t: L("Дуб", "The oak"), q: p => L(`Дуб, который ты посадил в ${p.f.tree ?? 10}, выше крыши. В его тени играют чужие дети.`, `The oak you planted at ${p.f.tree ?? 10} is taller than the roof. Strangers' kids play in its shade.`), o: [
     { l: L("Повесить качели", "Hang a swing"), tags: ["care"], ch: () => 1, yes: { j: 10, t: 4 }, ys: L("Очередь на качели с утра.", "There's a line for the swing every morning."), set: p => p.f.treeGrown = true },
     { l: L("Посидеть под ним одному", "Sit under it alone"), tags: ["rest"], ch: () => 1, yes: { j: 8, h: 2 }, ys: L("Листья шумят так же, как в детстве.", "The leaves rustle just like in childhood."), set: p => p.f.treeGrown = true },
   ]},
@@ -143,7 +143,7 @@ window.CARDS.push(
     { l: L("Сберечь для детей", "Keep it for the children"), tags: ["care"], ch: () => 1, yes: { j: 4, t: 2 }, ys: L("Завернул в платок и спрятал в шкаф. Пусть ждёт.", "Wrapped it in a handkerchief, hid it in the wardrobe. Let it wait."), set: p => p.f.relic = 1 },
     { l: L("Носить каждый день", "Use it every day"), ch: () => 1, yes: { j: 3 }, ys: L("Вещи нужны, чтобы ими пользоваться.", "Things are meant to be used.") },
   ]},
-  { id: "relic", ic: "⌚", from: 18, to: 70, if: p => p.f.relic >= 2 && !p.f.relicSeen, w: 3, t: L("Реликвия рода", "The family relic"), q: p => L(`Тебе достались часы, что передают в семье уже ${p.f.relic} ${p.f.relic < 5 ? "поколения" : "поколений"}. Антиквар называет сумму.`, `You inherited the watch that has passed down ${p.f.relic} generations. An antiques dealer names a price.`), o: [
+  { id: "relic", ic: "⌚", from: 18, to: 70, if: p => p.f.relic >= 2 && !p.f.relicSeen, w: 3, t: L("Реликвия рода", "The family relic"), q: p => L(`Тебе достались часы, что передают в семье уже ${p.f.relic || 2} ${(p.f.relic || 2) < 5 ? "поколения" : "поколений"}. Антиквар называет сумму.`, `You inherited the watch that has passed down ${p.f.relic || 2} generations. An antiques dealer names a price.`), o: [
     { l: L("Хранить и передать дальше", "Keep it and pass it on"), tags: ["care"], ch: () => 1, yes: { j: 6, t: 4 }, ys: L("Завёл. Идут.", "You wound it. Still ticking."), set: p => p.f.relicSeen = true },
     { l: L("Продать", "Sell it"), tags: ["business"], ch: () => 1, yes: { m: 18, j: -6 }, ys: L("Деньги кончатся. А часов больше нет.", "The money will run out. The watch is gone."), set: p => { p.f.relicSeen = true; p.f.relic = 0; } },
   ]},
@@ -165,11 +165,11 @@ window.CARDS.push(
     { l: L("Сменить фамилию", "Change your name"), ch: () => 1, yes: { j: 2, t: -4 }, ys: L("Новая подпись, старое лицо.", "A new signature, the same face."), set: p => { p.f.famName = "changed"; p.rep = 0; } },
     { l: L("Отмыть её делами", "Clear it with deeds"), tags: ["care", "work"], ch: () => .5, yes: { t: 8, j: 6 }, no: { j: -4 }, ys: L("Через десять лет говорили уже о тебе.", "Ten years on, they talked about you instead."), ns: L("Люди помнят долго.", "People have long memories."), set: p => { p.f.famName = "own"; p.rep = 2; }, setNo: p => p.f.famName = "own" },
   ]},
-  { id: "oldfeud", ic: "🏁", from: 15, to: 50, if: p => p.f.oldFeud && !p.f.feudDone, w: 2, t: L("Старая вражда", "An old feud"), q: p => L(`Внук того самого ${p.f.oldFeud}, с которым всю жизнь соперничал твой родитель, учится с тобой.`, `The grandchild of ${p.f.oldFeud}, your parent's lifelong rival, is in your class.`), o: [
+  { id: "oldfeud", ic: "🏁", from: 15, to: 50, if: p => p.f.oldFeud && !p.f.feudDone, w: 2, t: L("Старая вражда", "An old feud"), q: p => L(`Внук того самого ${p.f.oldFeud || "…"}, с которым всю жизнь соперничал твой родитель, учится с тобой.`, `The grandchild of ${p.f.oldFeud || "…"}, your parent's lifelong rival, is in your class.`), o: [
     { l: L("Продолжить традицию", "Keep the tradition going"), tags: ["risk"], ch: () => .5, yes: { k: 6, j: 4 }, no: { j: -4 }, ys: L("Счёт в пользу нашей семьи.", "Score one for our family."), ns: L("Счёт в пользу их семьи.", "Score one for theirs."), set: p => p.f.feudDone = "on", setNo: p => p.f.feudDone = "on" },
     { l: L("Закончить это", "End it"), tags: ["social"], ch: () => .7, yes: { t: 10, j: 6 }, no: { t: -2 }, ys: L("Две семьи впервые за полвека сели за один стол.", "Two families at one table for the first time in half a century."), ns: L("Не готовы. Пока.", "Not ready. Yet."), set: p => p.f.feudDone = "peace", setNo: p => p.f.feudDone = "on" },
   ]},
-  { id: "oldfriendkid", ic: "🤝", from: 20, to: 50, if: p => p.f.parentFriend && !p.f.pfDone, w: 1.6, t: L("Друг семьи", "A friend of the family"), q: p => L(`${p.f.parentFriend}, лучший друг твоего родителя, зовёт в гости. «Ты так похож».`, `${p.f.parentFriend}, your parent's best friend, invites you over. "You look just like them."`), o: [
+  { id: "oldfriendkid", ic: "🤝", from: 20, to: 50, if: p => p.f.parentFriend && !p.f.pfDone, w: 1.6, t: L("Друг семьи", "A friend of the family"), q: p => L(`${p.f.parentFriend || "Старый друг"}, лучший друг твоего родителя, зовёт в гости. «Ты так похож».`, `${p.f.parentFriend || "An old friend"}, your parent's best friend, invites you over. "You look just like them."`), o: [
     { l: L("Прийти и слушать истории", "Go and listen to the stories"), tags: ["social"], ch: () => 1, yes: { t: 8, j: 8, k: 2 }, ys: L("Ты узнал о родителе больше, чем за всю жизнь.", "You learned more about your parent than in your whole life."), set: p => p.f.pfDone = true },
     { l: L("Попросить совета в делах", "Ask for advice on work"), tags: ["work"], ch: () => .8, yes: { m: 8, k: 4 }, no: { j: -2 }, ys: L("Пара звонков, и всё сдвинулось.", "A couple of calls, and things moved."), ns: L("Времена другие, связи старые.", "Different times; old connections."), set: p => p.f.pfDone = true, setNo: p => p.f.pfDone = true },
   ]},
@@ -192,7 +192,7 @@ window.REP_OF = p => {
 window.HEIR_HOOKS = (window.HEIR_HOOKS || []).concat((parent, p) => {
   const f = parent.f || {};
   p.rep = parent.rep || 0;
-  if (f.biz && f.job === "business") { p.f.famBiz = f.biz; p.f.famBizGen = f.famBizGen || 1; }
+  if (f.biz) { p.f.famBiz = f.biz; p.f.famBizGen = f.famBizGen || 1; }
   if (f.house) p.f.famHouse = true;
   if (f.relic) p.f.relic = f.relic + 1;
   else if (f.heirloom) p.f.relic = 2;
@@ -203,7 +203,7 @@ window.HEIR_HOOKS = (window.HEIR_HOOKS || []).concat((parent, p) => {
 // ---------- Итоги и достижения ----------
 window.ENDINGS.push(
   { id: "firstlove", rank: 38, n: L("Первая и последняя", "First and last"), d: p => L(`Вы с ${p.flame.first} потеряли друг друга в юности и нашли через двадцать лет. Остаток жизни прошёл вдвоём.`, `You and ${p.flame.first} lost each other young and found each other twenty years later. You spent the rest together.`), hint: L("Вернуться к первой любви", "Find your first love again"), ok: p => p.f.flameBack && p.married && p.age >= 60 },
-  { id: "rivals", rank: 35, n: L("Достойный соперник", "A worthy rival"), d: p => L(`${p.rival.first} гнал${sx(p.rival, "", "а")} тебя вперёд всю жизнь. В конце вы пожали друг другу руки.`, `${p.rival.first} pushed you forward your whole life. In the end you shook hands.`), hint: L("Пройти всю жизнь с соперником и помириться", "Keep a rival for life and make peace"), ok: p => p.rival && p.rival.peace && p.rival.score >= 1 && p.age >= 70 },
+  { id: "rivals", rank: 35, n: L("Достойный соперник", "A worthy rival"), d: p => L(`${p.rival.first} гнал${sx(p.rival, "", "а")} тебя вперёд всю жизнь. В конце вы пожали друг другу руки.`, `${p.rival.first} pushed you forward your whole life. In the end you shook hands.`), hint: L("Пройти всю жизнь с соперником и помириться", "Keep a rival for life and make peace"), ok: p => p.rival && p.rival.peace && p.rival.score >= 0 && p.age >= 70 },
   { id: "oldname", rank: 57.5, n: L("Старая фамилия", "An old name"), d: p => L(`Фамилию ${p.last} знают уже несколько поколений. Ты добавил к ней свою главу.`, `The ${p.last} name has been known for generations. You added your own chapter.`), hint: L("Поднять славу рода через поколения", "Build the family name across generations"), ok: p => (p.gen || 1) >= 3 && window.REP_OF(p) >= 6 },
 );
 window.ACHIEVEMENTS.push(
