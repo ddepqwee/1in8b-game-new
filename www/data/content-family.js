@@ -275,6 +275,8 @@ window.EVENTS.push(
   { id: "rainbow", rare: true, w: () => .003, e: { j: 8 }, s: L("Двойная радуга над домом. Соседи выбежали на улицу.", "A double rainbow over the house. The neighbors ran outside."), ic: "🌈", act: p => p.f.rainbow = true },
 );
 for (const e of window.EVENTS) if (e.id === "lottery" || e.id === "stars") e.rare = true;
+// события, которые не подходят младенцу: учитель, интернет, новый друг, ограбление, авария
+for (const e of window.EVENTS) if (["teacher", "internet", "newfriend", "robbed", "crash", "windfall", "crisis"].includes(e.id)) { const w = e.w; e.w = p => p.age < 5 ? 0 : w(p); }
 const ICONS = { ill: "🤒", heart: "🫀", crisis: "📉", layoff: "📦", windfall: "💰", lottery: "🎟", inherit: "📜", harvest: "🌾", flood: "🌊", father: "🕯", mother: "🕯", widow: "🕯", newfriend: "🤝", teacher: "📖", war: "⚠", crash: "🚑", robbed: "👜", internet: "🌐", kiduni: "🎓", kidtrouble: "⚡", pension: "📉", loan: "🧾", release: "🔓", pandemic: "😷", tv: "📺", oldfriend: "🕯", quake: "🌋", typhoon: "🌀", monsoon: "🌧", drought: "☀", malaria: "🦟", winter: "❄", oilup: "🛢", oildown: "🛢", fwed: "💍", fhelp: "🤝", faway: "🧳", fdeath: "🕯", petdeath: "🐾", stars: "✨" };
 for (const e of window.EVENTS) if (!e.ic && ICONS[e.id]) e.ic = ICONS[e.id];
 })();

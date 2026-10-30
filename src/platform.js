@@ -9,7 +9,7 @@ import { App } from "@capacitor/app";
 
 const native = Capacitor.isNativePlatform();
 const desktop = typeof window !== "undefined" && !!window.desktop;
-const KEYS = ["lottery.lives", "lottery.atlas", "lottery.ach", "lottery.sound"];
+const KEYS = ["lottery.lives", "lottery.atlas", "lottery.ach", "lottery.sound", "lottery.music", "lottery.settings", "lottery.points", "lottery.owned", "lottery.equip", "lottery.xp", "lottery.endings", "lottery.codex", "lottery.rares", "lottery.challenges", "lottery.dynasty", "lottery.heirs", "lottery.livesTotal", "lottery.dailies", "lottery.dayBest", "lottery.lang"];
 
 async function ready() {
   if (!native) return;

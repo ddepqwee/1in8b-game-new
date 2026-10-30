@@ -102,6 +102,8 @@ window.ACHIEVEMENTS.push(
   { id: "rare5", n: L("Собиратель редкостей", "Collector of wonders"), d: L("Увидеть 5 разных редких моментов", "See 5 different rare moments"), ok: (p, a, m) => (m && m.rares || 0) >= 5 },
 );
 
+// достижения за всю игру, а не за одну жизнь: в списке «Достижения этой жизни» показываются только когда новые
+for (const a of window.ACHIEVEMENTS) if (["atlas10", "atlas30", "dyn3", "dyn5", "endings10", "endings25", "level10", "level25", "chal1", "chal8", "lives50", "daily7", "codex", "rare5"].includes(a.id)) a.meta = true;
 // отметки, которые нужны достижениям и итогам
 for (const c of window.CARDS) if (c.id === "scamcall") c.o[1].set = p => p.f.scamSafe = true;
 for (const e of window.EVENTS) if (e.id === "release") { const act = e.act; e.act = p => { p.f.wasJailed = true; act && act(p); }; }

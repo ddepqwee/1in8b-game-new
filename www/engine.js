@@ -164,6 +164,7 @@ function chanceOf(p, opt) {
   let bonus = 0;
   for (const tag of opt.tags || []) {
     for (const t of p.traits) bonus += (T[t].ch && T[t].ch[tag]) || 0;
+    bonus += (p.bonus && p.bonus.tags && p.bonus.tags[tag]) || 0;
     const F = window.FOCUS.find(f => f.id === p.focus);
     if (F && F.tag === tag) bonus += .06;
   }
@@ -261,7 +262,7 @@ function liveStage(p) {
     const text = txt(ev.s, p);
     const changes = apply(p, ev.e);
     if (ev.act) ev.act(p);
-    p.log.push([changes.some(([, v]) => v < 0) ? "down" : "up", text, p.age]);
+    p.log.push([changes.some(([, v]) => v < 0) ? "down" : "up", text, p.age, ev.ic, ev.rare]);
   }
   if (p.married && p.f.marriedAt == null) p.f.marriedAt = p.age;
   if (!p.married) p.f.marriedAt = null;
