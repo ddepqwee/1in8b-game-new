@@ -11,7 +11,7 @@ ctx.localStorage = { getItem: k => k === "lottery.lang" ? JSON.stringify(LANG) :
 ctx.navigator = { language: LANG };
 ctx.document = { documentElement: {} };
 vm.createContext(ctx);
-const FILES = ["i18n.js", "data/countries.js", "data/names.js", "data/content.js", "data/content-world.js", "data/content-life.js", "data/content-career.js", "data/content-family.js", "data/content-meta.js", "data/names-en.js", "data/lang-en.js", "engine.js"];
+const FILES = ["i18n.js", "data/countries.js", "data/names.js", "data/content.js", "data/content-world.js", "data/content-life.js", "data/content-career.js", "data/content-family.js", "data/content-roads.js", "data/content-days.js", "data/content-everyday.js", "data/content-places.js", "data/content-meta.js", "data/content-legacy.js", "data/names-en.js", "data/lang-en.js", "engine.js"];
 for (const f of FILES.filter(f => fs.existsSync(path.join(www, f)))) vm.runInContext(fs.readFileSync(path.join(www, f), "utf8") + "\n;Object.assign(window, {COUNTRIES: typeof COUNTRIES !== 'undefined' ? COUNTRIES : undefined})", ctx, { filename: f });
 const run = code => vm.runInContext(code, ctx);
 
