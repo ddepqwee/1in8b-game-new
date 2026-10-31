@@ -32,7 +32,7 @@ const ACH = id => "ACH_" + id.toUpperCase();
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280, height: 860, minWidth: 420, minHeight: 680,
-    backgroundColor: "#0f1424", title: "Birth Lottery", show: false, autoHideMenuBar: true,
+    backgroundColor: "#0f1424", title: "Life by Chance", show: false, autoHideMenuBar: true,
     icon: path.join(__dirname, "..", "store", "icon-512.png"),
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false },
   });

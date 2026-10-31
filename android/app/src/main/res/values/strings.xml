@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Лотерея рождения</string>
     <string name="title_activity_main">Лотерея рождения</string>
-    <string name="package_name">com.birthlottery.game</string>
-    <string name="custom_url_scheme">com.birthlottery.game</string>
+    <string name="package_name">com.lifebychance.game</string>
+    <string name="custom_url_scheme">com.lifebychance.game</string>
 </resources>

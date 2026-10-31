@@ -364,7 +364,7 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border: 1px s
 const app = document.getElementById("app"), overlay = document.getElementById("overlay");
 const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const fmt = n => n.toLocaleString(tr("ru-RU", "en-US"));
-document.title = tr("Лотерея рождения", "Birth Lottery");
+document.title = tr("Лотерея рождения", "Life by Chance");
 document.getElementById("gear").setAttribute("aria-label", tr("Настройки", "Settings"));
 document.getElementById("gear").title = tr("Настройки", "Settings");
 document.getElementById("settings").setAttribute("aria-label", tr("Настройки", "Settings"));
@@ -1438,7 +1438,7 @@ async function screenEnd() {
   save("lottery.lives", lives.slice(0, 50));
   const child = p.age < 5;
   const share = tr(`Лотерея рождения${mode === "daily" ? " · рождение дня " + today() : mode === "weekly" ? " · " + challenge.n.toLowerCase() : ""}: ${fullName(p)}, ${p.home.name}, ${p.born}–${yearOf(p)} · «${ending.n}»${p.dream ? (p.dreamDone ? ", мечта сбылась" : ", мечта не сбылась") : ""} · ${fmt(s)} очков`,
-    `Birth Lottery${mode === "daily" ? " · daily birth " + today() : mode === "weekly" ? " · " + challenge.n.toLowerCase() : ""}: ${fullName(p)}, ${p.home.name}, ${p.born}–${yearOf(p)} · "${ending.n}"${p.dream ? (p.dreamDone ? ", dream came true" : ", dream didn't come true") : ""} · ${fmt(s)} points`);
+    `Life by Chance${mode === "daily" ? " · daily birth " + today() : mode === "weekly" ? " · " + challenge.n.toLowerCase() : ""}: ${fullName(p)}, ${p.home.name}, ${p.born}–${yearOf(p)} · "${ending.n}"${p.dream ? (p.dreamDone ? ", dream came true" : ", dream didn't come true") : ""} · ${fmt(s)} points`);
   const all = [{ t: p, me: true }, ...twins.map(t => ({ t }))];
   const endCount = Object.keys(ends).length;
   app.innerHTML = `<section class="stack">

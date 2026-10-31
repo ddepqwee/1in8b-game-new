@@ -56,7 +56,7 @@ def capsule(w, h, name, focus, size, sub=None, icon=True, out=None):
         ic = Image.open(ICON).convert("RGBA").resize((round(h * 0.42),) * 2, Image.LANCZOS)
         base.paste(ic, (w - ic.width - round(h * 0.05), round(h * 0.05)), ic)
     pad = round(h * 0.07)
-    title(base, "Birth Lottery", sub, round(h * 0.15), pad)
+    title(base, "Life by Chance", sub, round(h * 0.15), pad)
     base.save(os.path.join(out or OUT, name))
     print(name, base.size)
 
