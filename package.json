@@ -1,5 +1,5 @@
 {
-  "name": "birth-lottery",
+  "name": "life-by-chance",
   "version": "0.1.0",
   "description": "Лотерея рождения — игра о том, как место рождения определяет жизнь",
   "private": true,
@@ -38,9 +38,9 @@
     "canvas-confetti": "^1.9.3"
   },
   "build": {
-    "appId": "com.birthlottery.game",
-    "productName": "Birth Lottery",
-    "executableName": "BirthLottery",
+    "appId": "com.lifebychance.game",
+    "productName": "Life by Chance",
+    "executableName": "LifeByChance",
     "directories": {
       "output": "dist-desktop"
     },

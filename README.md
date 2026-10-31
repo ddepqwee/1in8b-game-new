@@ -47,7 +47,7 @@ npm run shots           # пересоздать скриншоты для ма�
 
 ### Общее
 1. Пустой репозиторий на GitHub, куда будет залит этот проект.
-2. Окончательное название и идентификатор приложения (сейчас `com.birthlottery.game`; поменять до первой загрузки в магазины, потом нельзя).
+2. Окончательное название и идентификатор приложения выбраны: Life by Chance, `com.lifebychance.game` (после первой загрузки в магазины ID не поменять).
 3. Страница с политикой конфиденциальности: `store/privacy-policy.html` можно выложить через GitHub Pages. Заполнить имя и email.
 
 ### App Store
@@ -59,7 +59,7 @@ npm run shots           # пересоздать скриншоты для ма�
 
 ### Google Play
 1. Google Play Console, $25 один раз. Для нового личного аккаунта Google требует закрытое тестирование с 12 тестировщиками в течение 14 дней перед выходом в продакшен.
-2. Ключ подписи: `keytool -genkey -v -keystore release.jks -alias birthlottery -keyalg RSA -keysize 2048 -validity 10000`. Хранить в надёжном месте, без него обновления не выпустить.
+2. Ключ подписи: `keytool -genkey -v -keystore release.jks -alias lifebychance -keyalg RSA -keysize 2048 -validity 10000`. Хранить в надёжном месте, без него обновления не выпустить.
 3. Секреты в GitHub: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`, при автозагрузке `PLAY_SERVICE_ACCOUNT_JSON`.
 
 ### Steam

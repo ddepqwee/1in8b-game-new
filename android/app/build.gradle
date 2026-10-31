@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.birthlottery.game"
+    namespace = "com.lifebychance.game"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.birthlottery.game"
+        applicationId "com.lifebychance.game"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode (System.getenv("BUILD_NUMBER") ?: "1").toInteger()

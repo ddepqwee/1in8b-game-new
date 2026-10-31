@@ -1,4 +1,4 @@
-package com.birthlottery.game;
+package com.lifebychance.game;
 
 import com.getcapacitor.BridgeActivity;
 
